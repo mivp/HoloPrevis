@@ -1,5 +1,11 @@
 # HoloPrevis
 
+## Development tools
+
+- Windows 10
+- Visual Studio 2007 (community version)
+- Unity 2017.4LTS
+
 ## Current status
 
 - Can load obj object and spawn the object between hololens
