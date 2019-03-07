@@ -8,3 +8,4 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/HoloPrevis.unity
     guid: bdbba0157de4ade43a1e3eed95228e52
+  m_configObjects: {}

@@ -13,6 +13,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
         /// <summary>
         /// The position relative to the shared world anchor.
         /// </summary>
+        /*
         [SyncVar(hook = "xformchange")]
         private Vector3 localPosition;
 
@@ -21,6 +22,9 @@ namespace HoloToolkit.Unity.SharingWithUNET
             Debug.Log(localPosition + " xform change " + update);
             localPosition = update;
         }
+        */
+        [SyncVar]
+        private Vector3 localPosition;
 
         // <summary>
         /// The rotation relative to the shared world anchor.
