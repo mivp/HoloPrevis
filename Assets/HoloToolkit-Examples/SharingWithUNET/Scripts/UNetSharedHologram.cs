@@ -8,11 +8,9 @@ using UnityEngine.Networking;
 
 namespace HoloToolkit.Unity.SharingWithUNET
 {
-    public class UNetSharedHologram : NetworkBehaviour, IInputClickHandler
+    public class UNetSharedHologram : NetworkBehaviour, IInputClickHandler, INavigationHandler, IManipulationHandler
     {
-        /// <summary>
-        /// The position relative to the shared world anchor.
-        /// </summary>
+        
         /*
         [SyncVar(hook = "xformchange")]
         private Vector3 localPosition;
@@ -23,6 +21,10 @@ namespace HoloToolkit.Unity.SharingWithUNET
             localPosition = update;
         }
         */
+
+        /// <summary>
+        /// The position relative to the shared world anchor.
+        /// </summary>
         [SyncVar]
         private Vector3 localPosition;
 
@@ -32,18 +34,37 @@ namespace HoloToolkit.Unity.SharingWithUNET
         [SyncVar]
         private Quaternion localRotation;
 
+        // <summary>
+        /// The scale relative to the shared world anchor.
+        /// </summary>
+        [SyncVar]
+        private Vector3 localScale;
+
+
+        [SerializeField]
+        private float RotationSensitivity = 10.0f;
+
+        [SerializeField]
+        float ResizeSpeedFactor = 1.5f;
+
+        [SerializeField]
+        float ResizeScaleFactor = 1.5f;
+
+        private Vector3 lastScale;
+
         /// <summary>
         /// Sets the localPosition and localRotation on clients.
         /// </summary>
         /// <param name="postion">the localPosition to set</param>
         /// <param name="rotation">the localRotation to set</param>
         [Command]
-        public void CmdTransform(Vector3 postion, Quaternion rotation)
+        public void CmdTransform(Vector3 postion, Quaternion rotation, Vector3 scale)
         {
             if (!isLocalPlayer)
             {
                 localPosition = postion;
                 localRotation = rotation;
+                localScale = scale;
             }
         }
 
@@ -52,6 +73,75 @@ namespace HoloToolkit.Unity.SharingWithUNET
         private InputManager inputManager;
         public Vector3 movementOffset = Vector3.zero;
         private bool isOpaque = false;
+
+        void INavigationHandler.OnNavigationStarted(NavigationEventData eventData)
+        {
+            if (MyUIManager.Instance.CurrentModelEditMode == MyUIManager.ModelEditType.Rotate)
+            {
+                InputManager.Instance.PushModalInputHandler(gameObject);
+            }
+        }
+
+        void INavigationHandler.OnNavigationUpdated(NavigationEventData eventData)
+        {
+            if(MyUIManager.Instance.CurrentModelEditMode == MyUIManager.ModelEditType.Rotate)
+            {
+                // This will help control the amount of rotation.
+                float rotationFactor = eventData.NormalizedOffset.x * RotationSensitivity;
+
+                // 2.c: transform.Rotate around the Y axis using rotationFactor.
+                transform.Rotate(new Vector3(0, -1 * rotationFactor, 0));
+
+                UpdateTransformNetwork();
+            }
+        }
+
+        void INavigationHandler.OnNavigationCompleted(NavigationEventData eventData)
+        {
+            InputManager.Instance.PopModalInputHandler();
+        }
+
+        void INavigationHandler.OnNavigationCanceled(NavigationEventData eventData)
+        {
+            InputManager.Instance.PopModalInputHandler();
+        }
+
+        void IManipulationHandler.OnManipulationStarted(ManipulationEventData eventData)
+        {
+            if (MyUIManager.Instance.CurrentModelEditMode == MyUIManager.ModelEditType.Scale)
+            {
+                InputManager.Instance.PushModalInputHandler(gameObject);
+                lastScale = transform.localScale;
+            }
+        }
+
+        void IManipulationHandler.OnManipulationUpdated(ManipulationEventData eventData)
+        {
+            if (MyUIManager.Instance.CurrentModelEditMode == MyUIManager.ModelEditType.Scale)
+            {
+                // 4.a: Make this transform's position be the manipulationOriginalPosition + eventData.CumulativeDelta
+                float resizeX, resizeY, resizeZ;
+                resizeX = resizeY = resizeZ = eventData.CumulativeDelta.x * ResizeScaleFactor;
+                float MinScale = 0.4f;
+                float MaxScale = 2.5f;
+                resizeX = Mathf.Clamp(lastScale.x + resizeX, MinScale, MaxScale);
+                resizeY = Mathf.Clamp(lastScale.y + resizeY, MinScale, MaxScale);
+                resizeZ = Mathf.Clamp(lastScale.z + resizeZ, MinScale, MaxScale);
+
+                transform.localScale = Vector3.Lerp(transform.localScale, new Vector3(resizeX, resizeY, resizeZ), 0.1f); // resize speed factor
+                UpdateTransformNetwork();
+            }
+        }
+
+        void IManipulationHandler.OnManipulationCompleted(ManipulationEventData eventData)
+        {
+            InputManager.Instance.PopModalInputHandler();
+        }
+
+        void IManipulationHandler.OnManipulationCanceled(ManipulationEventData eventData)
+        {
+            InputManager.Instance.PopModalInputHandler();
+        }
 
         // Use this for initialization
         private void Start()
@@ -68,6 +158,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
             {
                 localPosition = transform.localPosition;
                 localRotation = transform.localRotation;
+                localScale = transform.localScale;
             }
 
             layerMask = SpatialMappingManager.Instance.LayerMask;
@@ -78,7 +169,6 @@ namespace HoloToolkit.Unity.SharingWithUNET
         // Update is called once per frame
         private void Update()
         {
-
             if (Moving)
             {
                 transform.position = Vector3.Lerp(transform.position, ProposeTransformPosition(), 0.2f);
@@ -88,7 +178,9 @@ namespace HoloToolkit.Unity.SharingWithUNET
 
                 transform.localPosition = localPosition;
                 transform.localRotation = localRotation;
+                transform.localScale = localScale;
             }
+            
         }
 
         private Vector3 ProposeTransformPosition()
@@ -103,9 +195,23 @@ namespace HoloToolkit.Unity.SharingWithUNET
             return retval;
         }
 
+        private void UpdateTransformNetwork()
+        {
+            // Depending on if you are host or client, either setting the SyncVar (host) 
+            // or calling the Cmd (client) will update the other users in the session.
+            // So we have to do both.
+            localPosition = transform.localPosition;
+            localRotation = transform.localRotation;
+            localScale = transform.localScale;
+            if (PlayerController.Instance != null)
+            {
+                PlayerController.Instance.SendSharedTransform(gameObject, localPosition, localRotation, localScale);
+            }
+        }
+
         public void OnInputClicked(InputClickedEventData eventData)
         {
-            if (isOpaque == false)
+            if (isOpaque == false && MyUIManager.Instance.CurrentModelEditMode == MyUIManager.ModelEditType.Move)
             {
                 Moving = !Moving;
                 if (Moving)
@@ -123,15 +229,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
                     {
                         SpatialMappingManager.Instance.DrawVisualMeshes = false;
                     }
-                    // Depending on if you are host or client, either setting the SyncVar (host) 
-                    // or calling the Cmd (client) will update the other users in the session.
-                    // So we have to do both.
-                    localPosition = transform.localPosition;
-                    localRotation = transform.localRotation;
-                    if (PlayerController.Instance != null)
-                    {
-                        PlayerController.Instance.SendSharedTransform(gameObject, localPosition, localRotation);
-                    }
+                    UpdateTransformNetwork();
                 }
 
                 eventData.Use();

@@ -246,6 +246,7 @@ namespace HoloToolkit.Unity.UX
                     break;
 
                 default:
+                    MyUIManager.Instance.OnAppBarButtonClicked(obj.name);
                     break;
             }
         }

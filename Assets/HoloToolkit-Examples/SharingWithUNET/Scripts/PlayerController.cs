@@ -358,10 +358,10 @@ namespace HoloToolkit.Unity.SharingWithUNET
         }
 
         [Command]
-        private void CmdSendSharedTransform(GameObject target, Vector3 pos, Quaternion rot)
+        private void CmdSendSharedTransform(GameObject target, Vector3 pos, Quaternion rot, Vector3 scale)
         {
             UNetSharedHologram ush = target.GetComponent<UNetSharedHologram>();
-            ush.CmdTransform(pos, rot);
+            ush.CmdTransform(pos, rot, scale);
         }
 
         /// <summary>
@@ -370,11 +370,11 @@ namespace HoloToolkit.Unity.SharingWithUNET
         /// <param name="target">The shared hologram</param>
         /// <param name="pos">position relative to the shared anchor</param>
         /// <param name="rot">rotation relative to the shared anchor</param>
-        public void SendSharedTransform(GameObject target, Vector3 pos, Quaternion rot)
+        public void SendSharedTransform(GameObject target, Vector3 pos, Quaternion rot, Vector3 scale)
         {
             if (isLocalPlayer)
             {
-                CmdSendSharedTransform(target, pos, rot);
+                CmdSendSharedTransform(target, pos, rot, scale);
             }
         }
     }
