@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using HoloToolkit.Unity;
+using HoloToolkit.Unity.SharingWithUNET;
 
 public class MyUIManager : Singleton<MyUIManager>
 {
@@ -13,6 +14,9 @@ public class MyUIManager : Singleton<MyUIManager>
     }
 
     public ModelEditType CurrentModelEditMode { get; private set; }
+
+
+    private bool modelLoaded = false;
 
     public void Start()
     {
@@ -33,8 +37,13 @@ public class MyUIManager : Singleton<MyUIManager>
         Debug.Log("OnLoadButtonClicked " + name);
         switch (name) {
             case "Load":
-                MySceneManager.Instance.LoadSampleData();
-                UpdateText("loaded, mode: move");
+                if (PlayerController.Instance != null && modelLoaded == false)
+                {
+                    Debug.Log("Start to load model");
+                    PlayerController.Instance.StartLoadPrevisTag("4194b4");
+                    modelLoaded = true;
+                    //UpdateText("loaded, mode: move");
+                }
                 break;
 
             case "Move":

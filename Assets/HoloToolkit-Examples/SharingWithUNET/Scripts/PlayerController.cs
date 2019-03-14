@@ -11,7 +11,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
     /// Controls player behavior (local and remote).
     /// </summary>
     [NetworkSettings(sendInterval = 0.033f)]
-    public class PlayerController : NetworkBehaviour, IInputClickHandler
+    public class PlayerController : NetworkBehaviour
     {
         private static PlayerController _Instance = null;
         /// <summary>
@@ -102,7 +102,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
             Debug.LogFormat("AnchorEstablished for {0} was {1} is now {2}", PlayerName, AnchorEstablished, update);
             AnchorEstablished = update;
             // only draw the mesh for the player if the anchor is found.
-            GetComponentInChildren<MeshRenderer>().enabled = update;
+            //GetComponentInChildren<MeshRenderer>().enabled = update;
         }
 
         /// <summary>
@@ -306,54 +306,24 @@ namespace HoloToolkit.Unity.SharingWithUNET
         /// </summary>
         public override void OnStartLocalPlayer()
         {
-            GetComponentInChildren<MeshRenderer>().material.color = Color.blue;
+            //GetComponentInChildren<MeshRenderer>().material.color = Color.blue;
         }
 
-        /// <summary>
-        /// Called on the host when a bullet needs to be added. 
-        /// This will 'spawn' the bullet on all clients, including the 
-        /// client on the host.
-        /// </summary>
-        [Command]
-        void CmdFire()
-        {
-            Vector3 bulletDir = transform.forward;
-            Vector3 bulletPos = transform.position + bulletDir * 1.5f;
-
-            // The bullet needs to be transformed relative to the shared anchor.
-            GameObject nextBullet = (GameObject)Instantiate(bullet, sharedWorldAnchorTransform.InverseTransformPoint(bulletPos), Quaternion.Euler(bulletDir));
-            nextBullet.GetComponentInChildren<Rigidbody>().velocity = bulletDir * 1.0f;
-            NetworkServer.Spawn(nextBullet);
-
-            // Clean up the bullet in 8 seconds.
-            Destroy(nextBullet, 8.0f);
-        }
-
-        public void OnInputClicked(InputClickedEventData eventData)
+        public void StartLoadPrevisTag(string tag)
         {
             if (isLocalPlayer)
             {
-                //CmdFire();
-            }
-        }
-
-        public void LoadTestObject()
-        {
-            if (isLocalPlayer)
-            {
-                CmdSpawnPrevisObject("gnome");
+                CmdSpawnPrevisObject(tag);
             }
         }
 
         [Command]
-        void CmdSpawnPrevisObject(string name)
+        void CmdSpawnPrevisObject(string tag)
         {
             Vector3 objectDir = transform.forward;
             Vector3 objectPos = transform.position + transform.forward * 2.0f;
             GameObject previsObject = Instantiate(previsModel, sharedWorldAnchorTransform.InverseTransformPoint(objectPos), Quaternion.Euler(sharedWorldAnchorTransform.TransformDirection(objectDir)));
-            //GameObject previsObject = Instantiate(previsModel, objectPos, Quaternion.identity);
-            //previsObject.GetComponent<PrevisModelLoader>().objName = name;
-            //previsObject.GetComponent<UNetSharedHologram>().UpdatePosition(objectPos);
+            previsObject.GetComponent<PrevisModelLoader>().previsTag = tag;
             NetworkServer.Spawn(previsObject);
         }
 
@@ -377,5 +347,35 @@ namespace HoloToolkit.Unity.SharingWithUNET
                 CmdSendSharedTransform(target, pos, rot, scale);
             }
         }
+
+        // Update movement offset when object size changes
+        public void UpdateMovementOffset(Vector3 offset)
+        {
+            if (isLocalPlayer)
+            {
+                Debug.Log("UpdateMovementOffset: " + offset.ToString());
+                CmdUpdateMovementOffset(offset);
+            }
+        }
+
+        [Command]
+        void CmdUpdateMovementOffset(Vector3 offset)
+        {
+            RpcUpdateMovementOffset(offset);
+        }
+
+        [ClientRpc]
+        void RpcUpdateMovementOffset(Vector3 offset)
+        {
+            foreach (GameObject obj in GameObject.FindGameObjectsWithTag("PrevisModelHolder"))
+            {
+                if (obj)
+                {
+                    Debug.Log("RpcUpdateMovementOffset: here");
+                    obj.GetComponent<UNetSharedHologram>().movementOffset = offset;
+                }
+            }
+        }
+
     }
 }
