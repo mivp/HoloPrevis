@@ -57,6 +57,10 @@ namespace HoloToolkit.Unity.SharingWithUNET
                     }
 
                     networkDiscovery.StartHosting("DefaultName");
+
+                    // enable menu
+                    MyUIManager.Instance.EnableMainMenu(true);
+
                     eventData.Use();
                 }
             }

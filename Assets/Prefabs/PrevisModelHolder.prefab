@@ -47,6 +47,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   previsTag: 4194b4
+  volumePrefab: {fileID: 966368048640795030, guid: b72cfa87318ee4b4a94555cf488760e0,
+    type: 3}
 --- !u!114 &114879498715296350
 MonoBehaviour:
   m_ObjectHideFlags: 0

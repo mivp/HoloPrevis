@@ -23,6 +23,26 @@ public class MyUIManager : Singleton<MyUIManager>
     public void Start()
     {
         CurrentModelEditMode = ModelEditType.Move;
+
+        EnableMainMenu(false);
+    }
+
+    public void EnableMainMenu(bool value = true)
+    {
+        GameObject appBar = GameObject.Find("AppBar");
+        if (appBar)
+        {
+            if(value == true)
+                appBar.GetComponent<HoloToolkit.Unity.UX.AppBar>().State = HoloToolkit.Unity.UX.AppBar.AppBarStateEnum.Default;
+            else
+                appBar.GetComponent<HoloToolkit.Unity.UX.AppBar>().State = HoloToolkit.Unity.UX.AppBar.AppBarStateEnum.Hidden;
+        }
+
+        var t = GameObject.Find("UIStatus");
+        if (t)
+        {
+            t.GetComponent<MeshRenderer>().enabled = value;
+        }
     }
 
     public void UpdateText(string str)
@@ -71,10 +91,10 @@ public class MyUIManager : Singleton<MyUIManager>
     {
         if (PlayerController.Instance != null && modelLoaded == false)
         {
-            Debug.Log("Start to load test mesh model 4194b4");
-            PlayerController.Instance.StartLoadPrevisTag("4194b4");
+            Debug.Log("Start to load test model");
+            PlayerController.Instance.StartLoadPrevisTag("4194b4"); // heart
+            //PlayerController.Instance.StartLoadPrevisTag("35b540"); // foot volume -- too slow
             modelLoaded = true;
-            UpdateText("loaded, mode: move");
         }
     }
 
@@ -94,7 +114,7 @@ public class MyUIManager : Singleton<MyUIManager>
                     Debug.Log("Start to load model from tag: " + result);
                     PlayerController.Instance.StartLoadPrevisTag(result);
                     modelLoaded = true;
-                    UpdateText("loaded, mode: move");
+                    //UpdateText("loaded, mode: move");
                 }
             }   
             else
