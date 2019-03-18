@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using HoloToolkit.Unity;
 using HoloToolkit.Unity.SharingWithUNET;
+using System;
+
 
 public class MyUIManager : Singleton<MyUIManager>
 {
@@ -36,14 +38,13 @@ public class MyUIManager : Singleton<MyUIManager>
     {
         Debug.Log("OnLoadButtonClicked " + name);
         switch (name) {
+            case "Scan":
+                UpdateText("scan QR for 30s");
+                ScanQR();
+                break;
+
             case "Load":
-                if (PlayerController.Instance != null && modelLoaded == false)
-                {
-                    Debug.Log("Start to load model");
-                    PlayerController.Instance.StartLoadPrevisTag("4194b4");
-                    modelLoaded = true;
-                    //UpdateText("loaded, mode: move");
-                }
+                LoadTestModel();
                 break;
 
             case "Move":
@@ -66,5 +67,47 @@ public class MyUIManager : Singleton<MyUIManager>
         }
     }
 
-    
+    private void LoadTestModel()
+    {
+        if (PlayerController.Instance != null && modelLoaded == false)
+        {
+            Debug.Log("Start to load test mesh model 4194b4");
+            PlayerController.Instance.StartLoadPrevisTag("4194b4");
+            modelLoaded = true;
+            UpdateText("loaded, mode: move");
+        }
+    }
+
+    private void ScanQR()
+    {
+#if !UNITY_EDITOR
+    MediaFrameQrProcessing.Wrappers.ZXingQrCodeScanner.ScanFirstCameraForQrCode(
+        result =>
+        {
+          UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+          {
+            if(result != null)
+            {
+                UpdateText("found tag: " + result);
+                if (PlayerController.Instance != null && modelLoaded == false)
+                {
+                    Debug.Log("Start to load model from tag: " + result);
+                    PlayerController.Instance.StartLoadPrevisTag(result);
+                    modelLoaded = true;
+                    UpdateText("loaded, mode: move");
+                }
+            }   
+            else
+            {
+                UpdateText("canceled - not found");
+            }
+          }, 
+          false);
+        },
+        TimeSpan.FromSeconds(60)
+    );
+#endif
+    }
+
+
 }
