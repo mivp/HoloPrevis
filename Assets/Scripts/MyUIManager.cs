@@ -92,8 +92,9 @@ public class MyUIManager : Singleton<MyUIManager>
         if (PlayerController.Instance != null && modelLoaded == false)
         {
             Debug.Log("Start to load test model");
-            PlayerController.Instance.StartLoadPrevisTag("4194b4"); // heart
+            //PlayerController.Instance.StartLoadPrevisTag("4194b4"); // heart
             //PlayerController.Instance.StartLoadPrevisTag("35b540"); // foot volume -- too slow
+            PlayerController.Instance.StartLoadPrevisTag("5e7d22"); // small pointcloud
             modelLoaded = true;
         }
     }

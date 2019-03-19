@@ -6,6 +6,12 @@ using System.IO;
 using System.IO.Compression;
 using Previs;
 using Dummiesman;
+using BAPointCloudRenderer.ObjectCreation;
+using BAPointCloudRenderer.CloudController;
+using BAPointCloudRenderer.CloudData;
+using BAPointCloudRenderer.Loading;
+using System.Threading;
+using System;
 /*
 #if !UNITY_EDITOR
 using Ionic.Zip;
@@ -16,6 +22,7 @@ public class PrevisModelLoader : MonoBehaviour
 {
     public string previsTag = "";
     public GameObject volumePrefab = null;
+    public GameObject pointPrefab = null;
 
     public class MeshProperties
     {
@@ -35,10 +42,17 @@ public class PrevisModelLoader : MonoBehaviour
     private GameObject previsGroup = null;
     private string localDataFolder = string.Empty;
 
+    private Node rootNode; // for pointcloud
+    private DynamicPointCloudSet setController;
+    private PointCloudLoader pointcloudLoader;
+    private DefaultMeshConfiguration meshConfig;
+
     // Start is called before the first frame update
     void Start()
     {
         LoadPrevisData();
+
+        pointcloudLoader = new PointCloudLoader();
     }
 
     void LoadPrevisData()
@@ -82,6 +96,10 @@ public class PrevisModelLoader : MonoBehaviour
         {
             // TODO
         }
+        else if (prevTag.type == "point")
+        {
+            // TODO
+        }
 
         // 5. load models
         // launch the mesh loader function as a coroutine so that the program will be semi-interactive while loading meshes :)
@@ -100,7 +118,7 @@ public class PrevisModelLoader : MonoBehaviour
         else if (prevTag.type == "point")
         {
             Debug.Log("Loading a pointcloud...");
-            //StartCoroutine(fetchPrevisPointCloud(previsServerLocation, prevTag.processedData, prevTag.tag));
+            StartCoroutine(fetchPrevisPoint(prevTag));
             return;
         }
         else
@@ -269,6 +287,19 @@ public class PrevisModelLoader : MonoBehaviour
         */
         MyUnityHelpers.UpdateObjectTransform(volumeObject, Vector3.zero, new Vector3(1.0f, 1.0f, 1.0f));
 
+        yield return null;
+    }
+
+    // === PREVIS POINTCLOUD ===
+
+    IEnumerator fetchPrevisPoint(PrevisTag prevTag)
+    {
+        string tag = prevTag.tag;
+        GameObject loaderObject = GameObject.Find("Cloud Loader");
+        PointCloudLoader loader = loaderObject.GetComponent<PointCloudLoader>();
+        loader.cloudPath = Application.streamingAssetsPath + "/5e7d22/potree/";
+        loader.LoadPointCloud();
+        
         yield return null;
     }
 
