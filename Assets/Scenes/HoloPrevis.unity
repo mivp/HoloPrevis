@@ -359,7 +359,7 @@ PrefabInstance:
     - target: {fileID: 114050950401502068, guid: aa610ada334bff640a535f0d23a9a15c,
         type: 3}
       propertyPath: buttons.Array.size
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 114050950401502068, guid: aa610ada334bff640a535f0d23a9a15c,
         type: 3}
@@ -510,6 +510,42 @@ PrefabInstance:
         type: 3}
       propertyPath: State
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114050950401502068, guid: aa610ada334bff640a535f0d23a9a15c,
+        type: 3}
+      propertyPath: buttons.Array.data[3].ManipulationPosition
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114050950401502068, guid: aa610ada334bff640a535f0d23a9a15c,
+        type: 3}
+      propertyPath: buttons.Array.data[4].ManipulationPosition
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114050950401502068, guid: aa610ada334bff640a535f0d23a9a15c,
+        type: 3}
+      propertyPath: buttons.Array.data[5].DefaultPosition
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114050950401502068, guid: aa610ada334bff640a535f0d23a9a15c,
+        type: 3}
+      propertyPath: buttons.Array.data[5].Name
+      value: Unload
+      objectReference: {fileID: 0}
+    - target: {fileID: 114050950401502068, guid: aa610ada334bff640a535f0d23a9a15c,
+        type: 3}
+      propertyPath: buttons.Array.data[5].Icon
+      value: AppBarCustom
+      objectReference: {fileID: 0}
+    - target: {fileID: 114050950401502068, guid: aa610ada334bff640a535f0d23a9a15c,
+        type: 3}
+      propertyPath: buttons.Array.data[5].Text
+      value: Unload
+      objectReference: {fileID: 0}
+    - target: {fileID: 114050950401502068, guid: aa610ada334bff640a535f0d23a9a15c,
+        type: 3}
+      propertyPath: buttons.Array.data[5].OnTappedEvent.m_TypeName
+      value: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
       objectReference: {fileID: 0}
     - target: {fileID: 1275815092924048, guid: aa610ada334bff640a535f0d23a9a15c, type: 3}
       propertyPath: m_Name

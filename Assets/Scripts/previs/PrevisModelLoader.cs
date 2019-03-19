@@ -70,6 +70,7 @@ public class PrevisModelLoader : MonoBehaviour
         PrevisTag prevTag = JsonUtility.FromJson<PrevisTag>(jsonText);
         Debug.Log("Tag: " + prevTag.tag);
         Debug.Log("Type: " + prevTag.type);
+        MyUIManager.Instance.SetPrevisTag(prevTag);
 
         // 3. download processed data (zip file)
 

@@ -4,7 +4,7 @@ using UnityEngine;
 using HoloToolkit.Unity;
 using HoloToolkit.Unity.SharingWithUNET;
 using System;
-
+using Previs;
 
 public class MyUIManager : Singleton<MyUIManager>
 {
@@ -17,14 +17,18 @@ public class MyUIManager : Singleton<MyUIManager>
 
     public ModelEditType CurrentModelEditMode { get; private set; }
 
-
-    private bool modelLoaded = false;
+    private PrevisTag prevTag = null;
 
     public void Start()
     {
         CurrentModelEditMode = ModelEditType.Move;
 
         EnableMainMenu(false);
+    }
+
+    public void SetPrevisTag(PrevisTag tag)
+    {
+        prevTag = tag;
     }
 
     public void EnableMainMenu(bool value = true)
@@ -67,19 +71,20 @@ public class MyUIManager : Singleton<MyUIManager>
                 LoadTestModel();
                 break;
 
+            case "Unload":
+                UnloadModel();
+                break;
+
             case "Move":
-                CurrentModelEditMode = ModelEditType.Move;
-                UpdateText("mode: move");
+                UpdateType(ModelEditType.Move);
                 break;
 
             case "Rotate":
-                CurrentModelEditMode = ModelEditType.Rotate;
-                UpdateText("mode: rotate");
+                UpdateType(ModelEditType.Rotate);
                 break;
 
             case "Scale":
-                CurrentModelEditMode = ModelEditType.Scale;
-                UpdateText("mode: scale");
+                UpdateType(ModelEditType.Scale);
                 break;
 
             default:
@@ -87,15 +92,30 @@ public class MyUIManager : Singleton<MyUIManager>
         }
     }
 
+    private void UpdateType(ModelEditType type)
+    {
+        if (prevTag != null)
+        {
+            if (prevTag.type == "mesh")
+            {
+                CurrentModelEditMode = ModelEditType.Scale;
+                UpdateText("mode: scale");
+            }
+            else
+            {
+                UpdateText("not supported");
+            }
+        }
+    }
+
     private void LoadTestModel()
     {
-        if (PlayerController.Instance != null && modelLoaded == false)
+        if (PlayerController.Instance != null && prevTag == null)
         {
             Debug.Log("Start to load test model");
-            //PlayerController.Instance.StartLoadPrevisTag("4194b4"); // heart
+            PlayerController.Instance.StartLoadPrevisTag("4194b4"); // heart
             //PlayerController.Instance.StartLoadPrevisTag("35b540"); // foot volume -- too slow
-            PlayerController.Instance.StartLoadPrevisTag("5e7d22"); // small pointcloud
-            modelLoaded = true;
+            //PlayerController.Instance.StartLoadPrevisTag("5e7d22"); // small pointcloud
         }
     }
 
@@ -110,12 +130,14 @@ public class MyUIManager : Singleton<MyUIManager>
             if(result != null)
             {
                 UpdateText("found tag: " + result);
-                if (PlayerController.Instance != null && modelLoaded == false)
+                if (PlayerController.Instance != null && prevTag == null)
                 {
                     Debug.Log("Start to load model from tag: " + result);
                     PlayerController.Instance.StartLoadPrevisTag(result);
-                    modelLoaded = true;
-                    //UpdateText("loaded, mode: move");
+                    if(prevTag.type == "mesh")
+                        UpdateText("loaded, mode: move");
+                    else
+                        UpdateText("loaded, mode: none");  
                 }
             }   
             else
@@ -130,5 +152,13 @@ public class MyUIManager : Singleton<MyUIManager>
 #endif
     }
 
-
+    private void UnloadModel()
+    {
+        if (PlayerController.Instance != null && prevTag != null)
+        {
+            PlayerController.Instance.UnloadPrevisTag(prevTag.tag, prevTag.type);
+            prevTag = null;
+            UpdateText("unloaded");
+        }
+    }
 }

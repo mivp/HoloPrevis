@@ -4,6 +4,7 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using HoloToolkit.Unity.InputModule;
+using BAPointCloudRenderer.CloudController;
 
 namespace HoloToolkit.Unity.SharingWithUNET
 {
@@ -376,6 +377,37 @@ namespace HoloToolkit.Unity.SharingWithUNET
                     obj.GetComponent<UNetSharedHologram>().movementOffset = offset;
                 }
             }
+        }
+
+        public void UnloadPrevisTag(string tag, string type)
+        {
+            CmdUnloadPrevisTag(tag, type);
+        }
+
+        [Command]
+        void CmdUnloadPrevisTag(string tag, string type)
+        {
+            RpcUnloadPrevisTag(tag, type);
+        }
+
+        [ClientRpc]
+        void RpcUnloadPrevisTag(string tag, string type)
+        {
+            if(type == "mesh")
+            {
+
+            }
+            else if (type == "point")
+            {
+                GameObject loaderObject = GameObject.Find("Cloud Loader");
+                PointCloudLoader loader = loaderObject.GetComponent<PointCloudLoader>();
+                loader.cloudPath = "";
+                loader.RemovePointCloud();
+            }
+
+            // remove all children
+            GameObject gO = GameObject.FindGameObjectWithTag("PrevisModelHolder");
+            if (gO) GameObject.Destroy(gO);
         }
 
     }
