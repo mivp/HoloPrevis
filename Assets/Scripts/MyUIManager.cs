@@ -23,6 +23,26 @@ public class MyUIManager : Singleton<MyUIManager>
     public void Start()
     {
         CurrentModelEditMode = ModelEditType.Move;
+
+        EnableMainMenu(false);
+    }
+
+    public void EnableMainMenu(bool value = true)
+    {
+        GameObject appBar = GameObject.Find("AppBar");
+        if (appBar)
+        {
+            if (value == true)
+                appBar.GetComponent<HoloToolkit.Unity.UX.AppBar>().State = HoloToolkit.Unity.UX.AppBar.AppBarStateEnum.Default;
+            else
+                appBar.GetComponent<HoloToolkit.Unity.UX.AppBar>().State = HoloToolkit.Unity.UX.AppBar.AppBarStateEnum.Hidden;
+        }
+
+        var t = GameObject.Find("UIStatus");
+        if (t)
+        {
+            t.GetComponent<MeshRenderer>().enabled = value;
+        }
     }
 
     public void UpdateText(string str)

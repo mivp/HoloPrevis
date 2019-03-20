@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using Previs;
 using Dummiesman;
+using HoloToolkit.Unity;
 /*
 #if !UNITY_EDITOR
 using Ionic.Zip;
@@ -232,6 +233,15 @@ public class PrevisModelLoader : MonoBehaviour
             if (PlayerController.Instance != null)
             {
                 PlayerController.Instance.UpdateMovementOffset(new Vector3(0, scale*extends.y, 0));
+            }
+
+            // indicator
+            GameObject indicator = GameObject.FindGameObjectWithTag("DirectionalIndicator");
+            if(indicator)
+            {
+                indicator.transform.parent = this.transform;
+                indicator.transform.localPosition = Vector3.zero;
+                indicator.GetComponent<DirectionIndicator>().enabled = true;
             }
         }
     }

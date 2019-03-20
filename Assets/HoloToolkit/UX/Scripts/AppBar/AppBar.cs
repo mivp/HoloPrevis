@@ -181,7 +181,8 @@ namespace HoloToolkit.Unity.UX
 
         public void Start()
         {
-            State = AppBarStateEnum.Default;
+            //State = AppBarStateEnum.Default;
+            State = AppBarStateEnum.Hidden;
 
             if (interactables.Count == 0)
             {

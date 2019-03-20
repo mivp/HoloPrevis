@@ -85,6 +85,9 @@ namespace HoloToolkit.Unity.SharingWithUNET
         {
             ScrollingSessionListUIController.Instance.JoinSelectedSession();
             eventData.Use();
+
+            // enable menu
+            MyUIManager.Instance.EnableMainMenu(true);
         }
     }
 }
