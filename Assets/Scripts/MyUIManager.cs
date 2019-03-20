@@ -92,14 +92,38 @@ public class MyUIManager : Singleton<MyUIManager>
         }
     }
 
+    private string GetModeString(ModelEditType type)
+    {
+        string str;
+        switch(type)
+        {
+            case ModelEditType.Move:
+                str = "mode: move";
+                break;
+
+            case ModelEditType.Rotate:
+                str = "mode: rotate";
+                break;
+
+            case ModelEditType.Scale:
+                str = "mode: scale";
+                break;
+
+            default:
+                str = "mode: none";
+                break;
+        }
+        return str;
+    }
+
     private void UpdateType(ModelEditType type)
     {
         if (prevTag != null)
         {
             if (prevTag.type == "mesh")
             {
-                CurrentModelEditMode = ModelEditType.Scale;
-                UpdateText("mode: scale");
+                CurrentModelEditMode = type;
+                UpdateText(GetModeString(type));
             }
             else
             {
