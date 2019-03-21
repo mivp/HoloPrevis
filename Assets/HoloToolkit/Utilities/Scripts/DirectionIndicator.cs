@@ -12,7 +12,7 @@ namespace HoloToolkit.Unity
     public class DirectionIndicator : MonoBehaviour
     {
         [Tooltip("The Cursor object the direction indicator will be positioned around.")]
-        public GameObject Cursor;
+        public GameObject Cursor = null;
 
         [Tooltip("Model to display the direction to the object this script is attached to.")]
         public GameObject DirectionIndicatorObject;
@@ -42,10 +42,12 @@ namespace HoloToolkit.Unity
 
         public void Awake()
         {
+            /*
             if (Cursor == null)
             {
                 Debug.LogError("Please include a GameObject for the cursor.");
             }
+            */
 
             if (DirectionIndicatorObject == null)
             {
@@ -103,7 +105,7 @@ namespace HoloToolkit.Unity
 
         public void Update()
         {
-            if (DirectionIndicatorObject == null)
+            if (DirectionIndicatorObject == null || Cursor == null)
             {
                 return;
             }

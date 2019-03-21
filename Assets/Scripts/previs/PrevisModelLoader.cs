@@ -7,6 +7,7 @@ using System.IO.Compression;
 using Previs;
 using Dummiesman;
 using HoloToolkit.Unity;
+using UnityEngine.Rendering;
 /*
 #if !UNITY_EDITOR
 using Ionic.Zip;
@@ -17,6 +18,7 @@ public class PrevisModelLoader : MonoBehaviour
 {
     public string previsTag = "";
     public Material defaultMaterial = null;
+    public GameObject directionalIndicatorPrefab = null;
 
     public class MeshProperties
     {
@@ -36,13 +38,7 @@ public class PrevisModelLoader : MonoBehaviour
     private GameObject previsGroup = null;
     private string localDataFolder = string.Empty;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        LoadPrevisData();
-    }
-
-    void LoadPrevisData()
+    public void LoadPrevisData()
     {
         if (previsTag == "") return; // or load default tag
 
@@ -179,6 +175,8 @@ public class PrevisModelLoader : MonoBehaviour
                     meshModel.transform.parent = groupParentNode.transform;
                     meshModel.name = pmg.obj;
                     ObjLoaded(pmp.name, meshModel);
+
+                    yield return null;
                 }
             }
 
@@ -206,6 +204,11 @@ public class PrevisModelLoader : MonoBehaviour
         foreach (MeshRenderer mr in target.GetComponentsInChildren<MeshRenderer>())
         {
             mr.material.color = prop.baseColour;
+            // disable unused features
+            mr.lightProbeUsage = LightProbeUsage.Off;
+            mr.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.receiveShadows = false;
         }
 
         // create mesh collisder
@@ -238,11 +241,13 @@ public class PrevisModelLoader : MonoBehaviour
             }
 
             // indicator
-            GameObject indicator = GameObject.FindGameObjectWithTag("DirectionalIndicator");
+            //GameObject indicator = GameObject.FindGameObjectWithTag("DirectionalIndicator");
+            GameObject indicator = Instantiate(directionalIndicatorPrefab, Vector3.zero, Quaternion.identity);
             if(indicator)
             {
                 indicator.transform.parent = this.transform;
                 indicator.transform.localPosition = Vector3.zero;
+                indicator.GetComponent<DirectionIndicator>().Cursor = GameObject.Find("Cursor");
                 indicator.GetComponent<DirectionIndicator>().enabled = true;
             }
         }

@@ -57,6 +57,8 @@ namespace HoloToolkit.Unity.SharingWithUNET
         [SyncVar]
         private Quaternion localRotation;
 
+        private GameObject previsObject = null;
+
         /// <summary>
         /// Sets the localPosition and localRotation on clients.
         /// </summary>
@@ -309,6 +311,13 @@ namespace HoloToolkit.Unity.SharingWithUNET
             //GetComponentInChildren<MeshRenderer>().material.color = Color.blue;
         }
 
+        [Command]
+        private void CmdSendSharedTransform(GameObject target, Vector3 pos, Quaternion rot, Vector3 scale)
+        {
+            UNetSharedHologram ush = target.GetComponent<UNetSharedHologram>();
+            ush.CmdTransform(pos, rot, scale);
+        }
+
         public void StartLoadPrevisTag(string tag)
         {
             if (isLocalPlayer)
@@ -322,17 +331,24 @@ namespace HoloToolkit.Unity.SharingWithUNET
         {
             Vector3 objectDir = transform.forward;
             Vector3 objectPos = transform.position + transform.forward * 2.0f;
-            GameObject previsObject = Instantiate(previsModel, sharedWorldAnchorTransform.InverseTransformPoint(objectPos), Quaternion.Euler(sharedWorldAnchorTransform.TransformDirection(objectDir)));
+            previsObject = Instantiate(previsModel, sharedWorldAnchorTransform.InverseTransformPoint(objectPos), Quaternion.Euler(sharedWorldAnchorTransform.TransformDirection(objectDir)));
             previsObject.GetComponent<PrevisModelLoader>().previsTag = tag;
             NetworkServer.Spawn(previsObject);
+            RpcNotifyPrevisObjectLoaded();
         }
 
-        [Command]
-        private void CmdSendSharedTransform(GameObject target, Vector3 pos, Quaternion rot, Vector3 scale)
+        [ClientRpc]
+        void RpcNotifyPrevisObjectLoaded()
         {
-            UNetSharedHologram ush = target.GetComponent<UNetSharedHologram>();
-            ush.CmdTransform(pos, rot, scale);
+            GameObject modelLoader = GameObject.FindGameObjectWithTag("PrevisModelHolder");
+            if(modelLoader)
+            {
+                modelLoader.GetComponent<PrevisModelLoader>().LoadPrevisData();
+                MyUIManager.Instance.modelLoaded = true;
+                MyUIManager.Instance.UpdateText("loaded, mode: move");
+            }
         }
+        
 
         /// <summary>
         /// For sending transforms for holograms which do not frequently change.
@@ -376,6 +392,29 @@ namespace HoloToolkit.Unity.SharingWithUNET
                 }
             }
         }
+
+        public void UnloadModel()
+        {
+            CmdUnloadModel();
+        }
+
+        [Command]
+        void CmdUnloadModel()
+        {
+            if(previsObject != null)
+            {
+                NetworkServer.Destroy(previsObject);
+                RpcUnloadModel();
+            }
+        }
+
+        [ClientRpc]
+        void RpcUnloadModel()
+        {
+            MyUIManager.Instance.modelLoaded = false;
+            MyUIManager.Instance.UpdateText("unloaded");
+        }
+
 
     }
 }

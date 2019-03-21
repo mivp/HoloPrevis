@@ -48,6 +48,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   previsTag: 4194b4
   defaultMaterial: {fileID: 2100000, guid: 8c3e9c1ff57eeca46ad52891eda813fd, type: 2}
+  directionalIndicatorPrefab: {fileID: 5304545692220661588, guid: ec64f857075b5b047964fe887dac3108,
+    type: 3}
 --- !u!114 &114879498715296350
 MonoBehaviour:
   m_ObjectHideFlags: 0

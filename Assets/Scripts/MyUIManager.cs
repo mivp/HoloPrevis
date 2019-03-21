@@ -18,7 +18,7 @@ public class MyUIManager : Singleton<MyUIManager>
     public ModelEditType CurrentModelEditMode { get; private set; }
 
 
-    private bool modelLoaded = false;
+    public bool modelLoaded = false;
 
     public void Start()
     {
@@ -59,7 +59,6 @@ public class MyUIManager : Singleton<MyUIManager>
         Debug.Log("OnLoadButtonClicked " + name);
         switch (name) {
             case "Scan":
-                UpdateText("scan QR for 30s");
                 ScanQR();
                 break;
 
@@ -82,6 +81,10 @@ public class MyUIManager : Singleton<MyUIManager>
                 UpdateText("mode: scale");
                 break;
 
+            case "Unload":
+                UnloadModel();
+                break;
+
             default:
                 break;
         }
@@ -93,14 +96,15 @@ public class MyUIManager : Singleton<MyUIManager>
         {
             Debug.Log("Start to load test mesh model 4194b4");
             PlayerController.Instance.StartLoadPrevisTag("4194b4");
-            modelLoaded = true;
-            UpdateText("loaded, mode: move");
         }
     }
 
     private void ScanQR()
     {
+        if (PlayerController.Instance == null || modelLoaded == true) return;
+
 #if !UNITY_EDITOR
+        UpdateText("scan QR for 30s");
     MediaFrameQrProcessing.Wrappers.ZXingQrCodeScanner.ScanFirstCameraForQrCode(
         result =>
         {
@@ -113,8 +117,6 @@ public class MyUIManager : Singleton<MyUIManager>
                 {
                     Debug.Log("Start to load model from tag: " + result);
                     PlayerController.Instance.StartLoadPrevisTag(result);
-                    modelLoaded = true;
-                    UpdateText("loaded, mode: move");
                 }
             }   
             else
@@ -126,7 +128,17 @@ public class MyUIManager : Singleton<MyUIManager>
         },
         TimeSpan.FromSeconds(60)
     );
+#else
+        UpdateText("Scan function is not available");
 #endif
+    }
+
+    private void UnloadModel()
+    {
+        if(PlayerController.Instance != null && modelLoaded == true)
+        {
+            PlayerController.Instance.UnloadModel();
+        }
     }
 
 

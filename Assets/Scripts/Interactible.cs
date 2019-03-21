@@ -5,12 +5,6 @@ using UnityEngine;
 
 public class Interactible : MonoBehaviour, IFocusable
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
     void IFocusable.OnFocusEnter()
     {
         foreach (Renderer r in GetComponentsInChildren<Renderer>())
