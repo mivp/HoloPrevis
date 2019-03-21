@@ -157,7 +157,9 @@ public class MTLLoader {
             {
                 string materialName = processedLine.Substring(7);
 
-                var newMtl = new Material(Shader.Find("Standard (Specular setup)")) { name = materialName };
+                //var newMtl = new Material(Shader.Find("Standard (Specular setup)")) { name = materialName };
+                //var newMtl = new Material(Shader.Find("MixedRealityToolkit/Standard")) { name = materialName };
+                var newMtl = new Material(GameObject.FindGameObjectWithTag("PrevisModelHolder").GetComponent<PrevisModelLoader>().defaultMaterial) { name = materialName };
                 mtlDict[materialName] = newMtl;
                 currentMaterial = newMtl;
 

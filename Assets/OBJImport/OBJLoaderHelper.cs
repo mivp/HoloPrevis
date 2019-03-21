@@ -77,7 +77,9 @@ namespace Dummiesman
 
         public static Material CreateNullMaterial()
         {
-            return new Material(Shader.Find("Standard (Specular setup)"));
+            //return new Material(Shader.Find("Standard (Specular setup)"));
+            //return new Material(Shader.Find("MixedRealityToolkit/Standard"));
+            return new Material(GameObject.FindGameObjectWithTag("PrevisModelHolder").GetComponent<PrevisModelLoader>().defaultMaterial);
         }
 
         public static Vector3 VectorFromStrArray(string[] cmps)

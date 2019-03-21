@@ -16,6 +16,7 @@ using Ionic.Zip;
 public class PrevisModelLoader : MonoBehaviour
 {
     public string previsTag = "";
+    public Material defaultMaterial = null;
 
     public class MeshProperties
     {
@@ -152,6 +153,7 @@ public class PrevisModelLoader : MonoBehaviour
                 GameObject groupParentNode = new GameObject();
                 groupParentNode.name = pmp.name;
                 groupParentNode.transform.parent = previsGroup.transform;
+                groupParentNode.AddComponent<Interactible>();
                 AddMeshProperties(pmp.name, new Color(pmp.colour[0] / 255.0f, pmp.colour[1] / 255.0f, pmp.colour[2] / 255.0f), Vector3.zero, pmp.name);
 
                 for (int pmgIndex = 0; pmgIndex < pmp.objects.Length; pmgIndex++)

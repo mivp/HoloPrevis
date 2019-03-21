@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   previsTag: 4194b4
+  defaultMaterial: {fileID: 2100000, guid: 8c3e9c1ff57eeca46ad52891eda813fd, type: 2}
 --- !u!114 &114879498715296350
 MonoBehaviour:
   m_ObjectHideFlags: 0
