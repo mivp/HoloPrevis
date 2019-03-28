@@ -56,8 +56,11 @@ public class MyUIManager : Singleton<MyUIManager>
     public void PrevisModelLoaded(PrevisTag tag)
     {
         previsTag = tag;
-        if(previsTag.type == "mesh")
+        CurrentModelEditMode = ModelEditType.Move;
+        if (previsTag.type == "mesh")
             UpdateText("mesh loaded, mode: move");
+        else if(previsTag.type == "point")
+            UpdateText("pointcloud loaded, mode: move");
     }
 
     public void PrevisModelUnloaded()
@@ -66,6 +69,8 @@ public class MyUIManager : Singleton<MyUIManager>
         {
             if (previsTag.type == "mesh")
                 UpdateText("mesh unloaded");
+            else if (previsTag.type == "point")
+                UpdateText("pointcloud unloaded");
             previsTag = null;
         } 
     }
@@ -111,8 +116,9 @@ public class MyUIManager : Singleton<MyUIManager>
         if (PlayerController.Instance == null || previsTag != null) return;
 
         Debug.Log("Start to load test model");
-        //PlayerController.Instance.StartLoadPrevisTag("4194b4");   // heart
-        PlayerController.Instance.StartLoadPrevisTag("d3ef22");     // tikal point cloud
+        PlayerController.Instance.StartLoadPrevisTag("4194b4");   // mesh heart
+        //PlayerController.Instance.StartLoadPrevisTag("d3ef22");   // tikal point cloud
+        //PlayerController.Instance.StartLoadPrevisTag("948a98");     // mesh baybridge
     }
 
     private void ScanQR()

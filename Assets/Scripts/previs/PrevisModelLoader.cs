@@ -165,7 +165,8 @@ public class PrevisModelLoader : MonoBehaviour
                 GameObject groupParentNode = new GameObject();
                 groupParentNode.name = pmp.name;
                 groupParentNode.transform.parent = previsGroup.transform;
-                groupParentNode.AddComponent<Interactible>();
+                if(prevTag.tag != "948a98") // TODO: ignore for baybride model for now. need a better way to enable/disable this
+                    groupParentNode.AddComponent<Interactible>();
                 AddMeshProperties(pmp.name, new Color(pmp.colour[0] / 255.0f, pmp.colour[1] / 255.0f, pmp.colour[2] / 255.0f), Vector3.zero, pmp.name);
 
                 for (int pmgIndex = 0; pmgIndex < pmp.objects.Length; pmgIndex++)
@@ -242,7 +243,7 @@ public class PrevisModelLoader : MonoBehaviour
         }
     }
 
-    void AllObjectsLoaded(PrevisTag prevTag, float defaultScale = 0.4f)
+    void AllObjectsLoaded(PrevisTag prevTag, float defaultScale = 0.5f)
     {
         Debug.Log("Finished loading");
         if (previsGroup)

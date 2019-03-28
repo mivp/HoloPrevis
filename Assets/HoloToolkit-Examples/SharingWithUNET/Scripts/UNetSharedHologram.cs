@@ -123,7 +123,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
                 float resizeX, resizeY, resizeZ;
                 resizeX = resizeY = resizeZ = eventData.CumulativeDelta.x * ResizeScaleFactor;
                 float MinScale = 0.4f;
-                float MaxScale = 2.5f;
+                float MaxScale = 4.0f;
                 resizeX = Mathf.Clamp(lastScale.x + resizeX, MinScale, MaxScale);
                 resizeY = Mathf.Clamp(lastScale.y + resizeY, MinScale, MaxScale);
                 resizeZ = Mathf.Clamp(lastScale.z + resizeZ, MinScale, MaxScale);
