@@ -424,7 +424,7 @@ public class PointMeshConfiguration
         material.SetInt("_Circles", renderCircles ? 1 : 0);
     }
 
-    public GameObject CreateGameObject(string name, Vector3[] vertexData, Color[] colorData, PotreeBoundingBox boundingBox)
+    public GameObject CreateGameObject(string name, Vector3[] vertexData, Color[] colorData)
     {
         GameObject gameObject = new GameObject(name);
 
@@ -453,7 +453,7 @@ public class PointMeshConfiguration
         comp.screenSize = screenSize;
         comp.interpolation = interpolation;
         gameObject.transform.parent = previsParent.transform;
-        gameObject.transform.localPosition = boundingBox.Min().ToFloatVector();
+        gameObject.transform.localPosition = Vector3.zero;
        
         if (gameObjectCollection != null)
         {
@@ -502,67 +502,6 @@ public class PotreeNode
         this.boundingBox = boundingBox;
         this.parent = parent;
     }
-
-    public void CreateAllGameObjects(PointMeshConfiguration configuration)
-    {
-        CreateGameObjects(configuration);
-        for (int i = 0; i < 8; i++)
-        {
-            if (children[i] != null)
-            {
-                children[i].CreateAllGameObjects(configuration);
-            }
-        }
-    }
-
-    public void CreateGameObjects(PointMeshConfiguration configuration)
-    {
-        int max = configuration.GetMaximumPointsPerMesh();
-        if (verticesToStore == null || colorsToStore == null) return;
-        if (verticesToStore.Length <= max)
-        {
-            GameObject gO = configuration.CreateGameObject(metaData.cloudName + "/" + "r" + name + " (" + verticesToStore.Length + ")", verticesToStore, colorsToStore, boundingBox);
-            if(GetLevel() == 0)
-                gO.AddComponent<BoxCollider>();
-            gameObjects.Add(gO);
-        }
-        else
-        {
-            int amount = Math.Min(max, verticesToStore.Length);
-            int index = 0; //name index
-            Vector3[] restVertices = verticesToStore;
-            Color[] restColors = colorsToStore;
-            while (amount > 0)
-            {
-                Vector3[] vertices = restVertices.Take(amount).ToArray();
-                Color[] colors = restColors.Take(amount).ToArray(); ;
-                restVertices = restVertices.Skip(amount).ToArray();
-                restColors = restColors.Skip(amount).ToArray();
-                GameObject gO = configuration.CreateGameObject(metaData.cloudName + "/" + "r" + name + "_" + index + " (" + vertices.Length + ")", vertices, colors, boundingBox);
-                if (GetLevel() == 0)
-                    gO.AddComponent<BoxCollider>();
-                gameObjects.Add(gO);
-                amount = Math.Min(max, vertices.Length);
-                index++;
-            }
-        }
-    }
-
-    public void SetPoints(Vector3[] vertices, Color[] colors)
-    {
-        if (gameObjects.Count != 0)
-        {
-            throw new ArgumentException("GameObjects already created!");
-        }
-        if (vertices == null || colors == null || vertices.Length != colors.Length)
-        {
-            throw new ArgumentException("Invalid data given!");
-        }
-        verticesToStore = vertices;
-        colorsToStore = colors;
-        pointCount = vertices.Length;
-    }
-
 
     public int GetLevel()
     {
@@ -625,6 +564,9 @@ public class PrevisPotreeHelper
     public PointMeshConfiguration meshConfiguration;
     // private
     PointCloudMetaData pointCloudMetaData;
+
+    private List<Vector3> listVertices = new List<Vector3>();
+    private List<Color> listColors = new List<Color>();
     
     // === FUNCTIONS ===
     // Load PointCloud until level 5 and add to parentObject
@@ -655,7 +597,7 @@ public class PrevisPotreeHelper
         LoadAllPoints(dataRPath, metaData, rootNode);
 
         // create gameobjects
-        rootNode.CreateAllGameObjects(meshConfiguration);
+        CreateGameObjects();
     }
 
     private static void LoadHierarchy(string dataRPath, PointCloudMetaData metaData, PotreeNode root)
@@ -726,8 +668,8 @@ public class PrevisPotreeHelper
         int numPoints = data.Length / pointByteSize;
         int offset = 0;
 
-        Vector3[] vertices = new Vector3[numPoints];
-        Color[] colors = new Color[numPoints];
+        //Vector3[] vertices = new Vector3[numPoints];
+        //Color[] colors = new Color[numPoints];
 
         //Read in data
         foreach (string pointAttribute in metaData.pointAttributes)
@@ -738,13 +680,14 @@ public class PrevisPotreeHelper
                 {
                     //Reduction to single precision!
                     //Note: y and z are switched
-                    float x = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 0) * metaData.scale);
-                    float y = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 8) * metaData.scale);
-                    float z = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 4) * metaData.scale);
-                    //float x = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 0) * metaData.scale + node.PotreeBoundingBox.lx); // including bounding offset
-                    //float y = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 8) * metaData.scale + node.PotreeBoundingBox.lz); // including bounding offset
-                    //float z = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 4) * metaData.scale + node.PotreeBoundingBox.ly); // including bounding offset
-                    vertices[i] = new Vector3(x, y, z);
+                    //float x = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 0) * metaData.scale);
+                    //float y = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 8) * metaData.scale);
+                    //float z = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 4) * metaData.scale);
+                    float x = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 0) * metaData.scale + node.PotreeBoundingBox.lx); // including bounding offset
+                    float y = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 8) * metaData.scale + node.PotreeBoundingBox.lz); // including bounding offset
+                    float z = (float)(System.BitConverter.ToUInt32(data, offset + i * pointByteSize + 4) * metaData.scale + node.PotreeBoundingBox.ly); // including bounding offset
+                    //vertices[i] = new Vector3(x, y, z);
+                    listVertices.Add(new Vector3(x, y, z));
                 }
                 offset += 12;
             }
@@ -755,12 +698,49 @@ public class PrevisPotreeHelper
                     byte r = data[offset + i * pointByteSize + 0];
                     byte g = data[offset + i * pointByteSize + 1];
                     byte b = data[offset + i * pointByteSize + 2];
-                    colors[i] = new Color32(r, g, b, 255);
+                    //colors[i] = new Color32(r, g, b, 255);
+                    listColors.Add(new Color32(r, g, b, 255));
                 }
                 offset += 3;
             }
         }
-        node.SetPoints(vertices, colors);
+        //node.SetPoints(vertices, colors);
+    }
+
+    private void CreateGameObjects()
+    {
+        int max = meshConfiguration.GetMaximumPointsPerMesh();
+        Vector3[] verticesToStore = listVertices.ToArray();
+        listVertices.Clear();
+        Color[] colorsToStore = listColors.ToArray();
+        listColors.Clear();
+
+        if (verticesToStore.Length <= max)
+        {
+            GameObject gO = meshConfiguration.CreateGameObject("potree (" + verticesToStore.Length + ")", verticesToStore, colorsToStore);
+            gO.AddComponent<BoxCollider>();
+        }
+        else
+        {
+            int amount = Math.Min(max, verticesToStore.Length);
+            int index = 0; //name index
+            Vector3[] restVertices = verticesToStore;
+            Color[] restColors = colorsToStore;
+            while (amount > 0)
+            {
+                Vector3[] vertices = restVertices.Take(amount).ToArray();
+                Color[] colors = restColors.Take(amount).ToArray(); ;
+                restVertices = restVertices.Skip(amount).ToArray();
+                restColors = restColors.Skip(amount).ToArray();
+                if(vertices.Length > 0)
+                {
+                    GameObject gO = meshConfiguration.CreateGameObject("potree_" + index + " (" + vertices.Length + ")", vertices, colors);
+                    gO.AddComponent<BoxCollider>();
+                }
+                amount = Math.Min(max, vertices.Length);
+                index++;
+            }
+        }
     }
 
     private static byte[] FindAndLoadFile(string dataRPath, PointCloudMetaData metaData, string id, string fileending)
@@ -783,19 +763,19 @@ public class PrevisPotreeHelper
         //z and y are different here than in the sample-code because these coordinates are switched in unity
         if ((index & 2) != 0)
         {
-            min.z += size.z / 2;
-        }
-        else
-        {
-            max.z -= size.z / 2;
-        }
-        if ((index & 1) != 0)
-        {
             min.y += size.y / 2;
         }
         else
         {
             max.y -= size.y / 2;
+        }
+        if ((index & 1) != 0)
+        {
+            min.z += size.z / 2;
+        }
+        else
+        {
+            max.z -= size.z / 2;
         }
         if ((index & 4) != 0)
         {
