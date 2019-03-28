@@ -4,6 +4,7 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using HoloToolkit.Unity.InputModule;
+using System;
 
 namespace HoloToolkit.Unity.SharingWithUNET
 {
@@ -30,7 +31,6 @@ namespace HoloToolkit.Unity.SharingWithUNET
         /// this player. Must exist in the spawnable prefabs on the
         /// NetworkManager.
         /// </summary>
-        public GameObject bullet;
         public GameObject previsModel;
 
         public bool CanShareAnchors;
@@ -311,45 +311,6 @@ namespace HoloToolkit.Unity.SharingWithUNET
             //GetComponentInChildren<MeshRenderer>().material.color = Color.blue;
         }
 
-        [Command]
-        private void CmdSendSharedTransform(GameObject target, Vector3 pos, Quaternion rot, Vector3 scale)
-        {
-            UNetSharedHologram ush = target.GetComponent<UNetSharedHologram>();
-            ush.CmdTransform(pos, rot, scale);
-        }
-
-        public void StartLoadPrevisTag(string tag)
-        {
-            if (isLocalPlayer)
-            {
-                CmdSpawnPrevisObject(tag);
-            }
-        }
-
-        [Command]
-        void CmdSpawnPrevisObject(string tag)
-        {
-            Vector3 objectDir = transform.forward;
-            Vector3 objectPos = transform.position + transform.forward * 2.0f;
-            previsObject = Instantiate(previsModel, sharedWorldAnchorTransform.InverseTransformPoint(objectPos), Quaternion.Euler(sharedWorldAnchorTransform.TransformDirection(objectDir)));
-            previsObject.GetComponent<PrevisModelLoader>().previsTag = tag;
-            NetworkServer.Spawn(previsObject);
-            RpcNotifyPrevisObjectLoaded();
-        }
-
-        [ClientRpc]
-        void RpcNotifyPrevisObjectLoaded()
-        {
-            GameObject modelLoader = GameObject.FindGameObjectWithTag("PrevisModelHolder");
-            if(modelLoader)
-            {
-                modelLoader.GetComponent<PrevisModelLoader>().LoadPrevisData();
-                MyUIManager.Instance.modelLoaded = true;
-                MyUIManager.Instance.UpdateText("loaded, mode: move");
-            }
-        }
-        
-
         /// <summary>
         /// For sending transforms for holograms which do not frequently change.
         /// </summary>
@@ -361,6 +322,42 @@ namespace HoloToolkit.Unity.SharingWithUNET
             if (isLocalPlayer)
             {
                 CmdSendSharedTransform(target, pos, rot, scale);
+            }
+        }
+
+        [Command]
+        private void CmdSendSharedTransform(GameObject target, Vector3 pos, Quaternion rot, Vector3 scale)
+        {
+            UNetSharedHologram ush = target.GetComponent<UNetSharedHologram>();
+            ush.CmdTransform(pos, rot, scale);
+        }
+
+        public void StartLoadPrevisTag(string tag)
+        {
+            Debug.Log("StartLoadPrevisTag");
+            if (isLocalPlayer)
+            {
+                Debug.Log("Call CmdSpawnPrevisObject");
+                CmdSpawnPrevisObject(tag);
+            }
+        }
+
+        [Command]
+        void CmdSpawnPrevisObject(string tag)
+        {
+            Debug.Log("CmdSpawnPrevisObject");
+            Vector3 objectDir = transform.forward;
+            Vector3 objectPos = transform.position + transform.forward * 2.0f;
+            try
+            {
+                previsObject = Instantiate(previsModel, sharedWorldAnchorTransform.InverseTransformPoint(objectPos), Quaternion.Euler(sharedWorldAnchorTransform.TransformDirection(objectDir)));
+                previsObject.GetComponent<PrevisModelLoader>().previsTag = tag;
+                Debug.Log("NetworkServer.Spawn");
+                NetworkServer.Spawn(previsObject);
+            }
+            catch(Exception e)
+            {
+                Debug.LogException(e);
             }
         }
 
@@ -395,7 +392,10 @@ namespace HoloToolkit.Unity.SharingWithUNET
 
         public void UnloadModel()
         {
-            CmdUnloadModel();
+            if (isLocalPlayer)
+            {
+                CmdUnloadModel();
+            }
         }
 
         [Command]
@@ -411,8 +411,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
         [ClientRpc]
         void RpcUnloadModel()
         {
-            MyUIManager.Instance.modelLoaded = false;
-            MyUIManager.Instance.UpdateText("unloaded");
+            MyUIManager.Instance.PrevisModelUnloaded();
         }
 
 

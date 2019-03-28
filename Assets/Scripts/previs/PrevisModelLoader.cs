@@ -17,8 +17,8 @@ using Ionic.Zip;
 public class PrevisModelLoader : MonoBehaviour
 {
     public string previsTag = "";
-    public Material defaultMaterial = null;
-    public GameObject directionalIndicatorPrefab = null;
+    public Material defaultMaterial;
+    public GameObject directionalIndicatorPrefab;
 
     public class MeshProperties
     {
@@ -38,7 +38,12 @@ public class PrevisModelLoader : MonoBehaviour
     private GameObject previsGroup = null;
     private string localDataFolder = string.Empty;
 
-    public void LoadPrevisData()
+    public void Start()
+    {
+        LoadPrevisData();
+    }
+
+    private void LoadPrevisData()
     {
         if (previsTag == "") return; // or load default tag
 
@@ -48,7 +53,7 @@ public class PrevisModelLoader : MonoBehaviour
         jsonFileName = Path.Combine(jsonFileName, "info.json");
         Debug.Log("info json : " + jsonFileName);
         string jsonText = GetTextFileContent(jsonFileName);
-        
+
         // 2. parse json data for the tag
         PrevisTag prevTag = JsonUtility.FromJson<PrevisTag>(jsonText);
         Debug.Log("Tag: " + prevTag.tag);
@@ -56,34 +61,49 @@ public class PrevisModelLoader : MonoBehaviour
 
         // 3. download processed data (zip file)
 
-        // 4. unzip the downloaded data
+        // 4. create directory to store uncompressed data
         localDataFolder = Application.persistentDataPath + "/" + previsTag;
         Debug.Log("local data folder: " + localDataFolder);
-        MyUIManager.Instance.UpdateText(localDataFolder);
+        if(MyUIManager.Instance)
+            MyUIManager.Instance.UpdateText(localDataFolder);
         Directory.CreateDirectory(localDataFolder);
 
-        string meshParamsFile = Path.Combine(localDataFolder, "mesh.json");
-        bool fileAvailable = File.Exists(meshParamsFile);
-        if(fileAvailable == false)
-        {
-            string zipFileName = Application.streamingAssetsPath + "/" + previsTag + "/mesh_processed.zip";
-            zipFileName = zipFileName.Replace("\\", "/");
-
-            new MyUnityHelpers().ExtractZipFile(zipFileName, localDataFolder);
-        }
-
-        // 5. load models
+        // 5. uncompress and load models
         // launch the mesh loader function as a coroutine so that the program will be semi-interactive while loading meshes :)
         // StartCoroutine(loadMeshes());
         if (prevTag.type == "mesh")
         {
+            string meshParamsFile = Path.Combine(localDataFolder, "mesh.json");
+            bool fileAvailable = File.Exists(meshParamsFile);
+            if (fileAvailable == false)
+            {
+                Debug.Log("Unzip mesh data...");
+                string zipFileName = Application.streamingAssetsPath + "/" + previsTag + "/mesh_processed.zip";
+                zipFileName = zipFileName.Replace("\\", "/");
+
+                new MyUnityHelpers().ExtractZipFile(zipFileName, localDataFolder);
+            }
+
             Debug.Log("Loading a mesh...");
             StartCoroutine(fetchPrevisMesh(prevTag));
         }
         else if (prevTag.type == "point")
         {
-            Debug.Log("Loading a point... (not implemented yet!)");
-            //StartCoroutine(fetchPrevisPointCloud(previsServerLocation, prevTag.processedData, prevTag.tag));
+            string pointCloudFile = localDataFolder + "/potree/cloud.js";
+            pointCloudFile = pointCloudFile.Replace("\\", "/");
+
+            bool fileAvailable = File.Exists(pointCloudFile);
+            if (fileAvailable == false)
+            {
+                Debug.Log("Unzip point data...");
+                string zipFileName = Application.streamingAssetsPath + "/" + previsTag + "/point_processed.zip";
+                zipFileName = zipFileName.Replace("\\", "/");
+
+                new MyUnityHelpers().ExtractZipFile(zipFileName, localDataFolder);
+            }
+
+            Debug.Log("Loading a point...");
+            StartCoroutine(fetchPrevisPointCloud(prevTag));
             return;
         }
         else
@@ -91,19 +111,15 @@ public class PrevisModelLoader : MonoBehaviour
             Debug.Log("Error: invalid data type");
             return;
         }
+
     }
 
     string GetTextFileContent(string filename)
     {
-        /*
         StreamReader reader = new StreamReader(new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read));
         string text = reader.ReadToEnd();
         reader.Dispose();
         return text;
-        */
-        byte[] bytes = UnityEngine.Windows.File.ReadAllBytes(filename);
-        string fileData = System.Text.Encoding.ASCII.GetString(bytes);
-        return fileData;
     }
 
     public void AddMeshProperties(string meshname, Color colour, Vector3 position, string description)
@@ -159,7 +175,7 @@ public class PrevisModelLoader : MonoBehaviour
                     // string targetPath = Application.dataPath + "/../" + folderName + "/" + OBJName;
                     string targetPath = localDataFolder + "/" + pmp.name + "/" + pmg.obj;
                     targetPath = targetPath.Replace("\\", "/");
-                    if(!File.Exists(targetPath))
+                    if (!File.Exists(targetPath))
                     {
                         Debug.Log(targetPath + " is not exist!");
                         continue;
@@ -174,18 +190,20 @@ public class PrevisModelLoader : MonoBehaviour
                     GameObject meshModel = new OBJLoader().Load(targetPath);
                     meshModel.transform.parent = groupParentNode.transform;
                     meshModel.name = pmg.obj;
+                    meshModel.transform.localPosition = Vector3.zero;
                     ObjLoaded(pmp.name, meshModel);
 
                     yield return null;
                 }
             }
 
-            AllObjectsLoaded();
+            AllObjectsLoaded(prevTag);
 
         }
 
         yield return null;
     }
+
 
     Bounds GetGameObjectBound(GameObject g)
     {
@@ -216,7 +234,7 @@ public class PrevisModelLoader : MonoBehaviour
         {
             GameObject go = child.gameObject;
             Mesh m = (go.GetComponent(typeof(MeshFilter)) as MeshFilter).mesh;
-            if(m)
+            if (m)
             {
                 MeshCollider mc = go.AddComponent<MeshCollider>() as MeshCollider;
                 mc.sharedMesh = m;
@@ -224,43 +242,77 @@ public class PrevisModelLoader : MonoBehaviour
         }
     }
 
-    void AllObjectsLoaded()
+    void AllObjectsLoaded(PrevisTag prevTag, float defaultScale = 0.4f)
     {
         Debug.Log("Finished loading");
         if (previsGroup)
         {
+            Vector3 center = GetGameObjectBound(previsGroup).center;
             Vector3 extends = GetGameObjectBound(previsGroup).extents;
-            Debug.Log("extend: " + extends.ToString());
+            Debug.Log("center: " + center.ToString() + " extend: " + extends.ToString());
             float maxExtend = Mathf.Max(extends.x, extends.y, extends.z);
-            float scale = 0.4f / maxExtend;
+            float scale = defaultScale / maxExtend;
             UpdateObjectTransform(previsGroup, Vector3.zero, new Vector3(scale, scale, scale));
+            previsGroup.transform.localPosition = scale * (-1 * center);
 
             if (PlayerController.Instance != null)
             {
-                PlayerController.Instance.UpdateMovementOffset(new Vector3(0, scale*extends.y, 0));
+                PlayerController.Instance.UpdateMovementOffset(new Vector3(0, scale * extends.y, 0));
             }
 
             // indicator
             //GameObject indicator = GameObject.FindGameObjectWithTag("DirectionalIndicator");
-            GameObject indicator = Instantiate(directionalIndicatorPrefab, Vector3.zero, Quaternion.identity);
-            if(indicator)
+            if (directionalIndicatorPrefab != null)
             {
-                indicator.transform.parent = this.transform;
-                indicator.transform.localPosition = Vector3.zero;
-                indicator.GetComponent<DirectionIndicator>().Cursor = GameObject.Find("Cursor");
-                indicator.GetComponent<DirectionIndicator>().enabled = true;
+                GameObject indicator = Instantiate(directionalIndicatorPrefab, Vector3.zero, Quaternion.identity);
+                if (indicator)
+                {
+                    indicator.transform.parent = this.transform;
+                    indicator.transform.localPosition = Vector3.zero;
+                    indicator.GetComponent<DirectionIndicator>().Cursor = GameObject.Find("Cursor");
+                    indicator.GetComponent<DirectionIndicator>().enabled = true;
+                }
             }
+
+            //model loaded
+            if(MyUIManager.Instance)
+                MyUIManager.Instance.PrevisModelLoaded(prevTag);
         }
     }
 
+    // === POINT CLOUD ===
     void UpdateObjectTransform(GameObject gameObject, Vector3 position, Vector3 scale)
     {
         gameObject.transform.localPosition = position;
         gameObject.transform.localScale = scale;
+        /*
         foreach (Transform child in gameObject.transform)
         {
             GameObject c = child.gameObject;
             c.transform.localPosition = Vector3.zero;
         }
+        */
     }
+
+    IEnumerator fetchPrevisPointCloud(PrevisTag prevTag)
+    {
+        string previsTag = prevTag.tag;
+
+        previsGroup = new GameObject();
+        previsGroup.name = prevTag.tag;
+        previsGroup.transform.parent = this.transform;
+
+        string cloudPath = localDataFolder + "/potree/";
+        cloudPath = cloudPath.Replace("\\", "/");
+        new PrevisPotreeHelper().LoadPointCloud(cloudPath, previsGroup, 3, 6);
+
+        //Vector3 extends = GetGameObjectBound(previsGroup).extents;
+        //Debug.Log("center: " + GetGameObjectBound(previsGroup).center.ToString());
+        //Debug.Log("extend: " + extends.ToString());
+
+        AllObjectsLoaded(prevTag, 1.5f);
+
+        yield return null;
+    }
+
 }

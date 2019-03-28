@@ -47,5 +47,5 @@ MonoBehaviour:
   DirectionIndicatorObject: {fileID: 133742, guid: e123cce6ed201f447a1a4b3346f242e9,
     type: 3}
   DirectionIndicatorColor: {r: 0, g: 0, b: 1, a: 1}
-  VisibilitySafeFactor: 0.1
+  VisibilitySafeFactor: 0
   MetersFromCursor: 0.3

@@ -4,7 +4,7 @@ using UnityEngine;
 using HoloToolkit.Unity;
 using HoloToolkit.Unity.SharingWithUNET;
 using System;
-
+using Previs;
 
 public class MyUIManager : Singleton<MyUIManager>
 {
@@ -17,8 +17,7 @@ public class MyUIManager : Singleton<MyUIManager>
 
     public ModelEditType CurrentModelEditMode { get; private set; }
 
-
-    public bool modelLoaded = false;
+    private PrevisTag previsTag = null;
 
     public void Start()
     {
@@ -52,6 +51,23 @@ public class MyUIManager : Singleton<MyUIManager>
         {
             t.GetComponent<TextMesh>().text = str;
         }
+    }
+
+    public void PrevisModelLoaded(PrevisTag tag)
+    {
+        previsTag = tag;
+        if(previsTag.type == "mesh")
+            UpdateText("mesh loaded, mode: move");
+    }
+
+    public void PrevisModelUnloaded()
+    {
+        if(previsTag != null)
+        {
+            if (previsTag.type == "mesh")
+                UpdateText("mesh unloaded");
+            previsTag = null;
+        } 
     }
 
     public void OnAppBarButtonClicked(string name)
@@ -92,16 +108,16 @@ public class MyUIManager : Singleton<MyUIManager>
 
     private void LoadTestModel()
     {
-        if (PlayerController.Instance != null && modelLoaded == false)
-        {
-            Debug.Log("Start to load test mesh model 4194b4");
-            PlayerController.Instance.StartLoadPrevisTag("4194b4");
-        }
+        if (PlayerController.Instance == null || previsTag != null) return;
+
+        Debug.Log("Start to load test model");
+        //PlayerController.Instance.StartLoadPrevisTag("4194b4");   // heart
+        PlayerController.Instance.StartLoadPrevisTag("d3ef22");     // tikal point cloud
     }
 
     private void ScanQR()
     {
-        if (PlayerController.Instance == null || modelLoaded == true) return;
+        if (PlayerController.Instance == null || previsTag != null) return;
 
 #if !UNITY_EDITOR
         UpdateText("scan QR for 30s");
@@ -113,7 +129,7 @@ public class MyUIManager : Singleton<MyUIManager>
             if(result != null)
             {
                 UpdateText("found tag: " + result);
-                if (PlayerController.Instance != null && modelLoaded == false)
+                if (PlayerController.Instance != null && previsTag == null)
                 {
                     Debug.Log("Start to load model from tag: " + result);
                     PlayerController.Instance.StartLoadPrevisTag(result);
@@ -135,7 +151,7 @@ public class MyUIManager : Singleton<MyUIManager>
 
     private void UnloadModel()
     {
-        if(PlayerController.Instance != null && modelLoaded == true)
+        if(PlayerController.Instance != null && previsTag != null)
         {
             PlayerController.Instance.UnloadModel();
         }
