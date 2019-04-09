@@ -6,13 +6,13 @@
 - Provide a GUI menu to load/unload, scan QR code and modify the loaded object (move, rotate, scale)
 - Support multi-hololens using UNET (only user who loads object can unload)
 - Highligh object part when a user focus on it
+- Sounds (environment + button click)
 
 
 ## Bugs or improvement features
 
 - Add volume (slice) support
 - Add network download
-- Add sounds (environment + interaction)
 
 ## Dev enviroment
 
@@ -24,6 +24,6 @@
 ## How to build and run
 
 - Load project folder in Unity
-- Open HoloPrevis scene
+- Open HoloPrevisUNET scene
 - Build UWP project
 - Build and deploy to hololens

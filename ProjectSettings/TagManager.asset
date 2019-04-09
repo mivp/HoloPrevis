@@ -6,6 +6,7 @@ TagManager:
   tags:
   - PrevisModelHolder
   - DirectionalIndicator
+  - PrevisCurrentModel
   layers:
   - Default
   - TransparentFX

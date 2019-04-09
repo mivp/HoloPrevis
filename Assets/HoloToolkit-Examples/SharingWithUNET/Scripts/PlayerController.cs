@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using HoloToolkit.Unity.InputModule;
 using System;
+using System.Collections;
 
 namespace HoloToolkit.Unity.SharingWithUNET
 {
@@ -57,7 +58,27 @@ namespace HoloToolkit.Unity.SharingWithUNET
         [SyncVar]
         private Quaternion localRotation;
 
+
+        // to load/unload previs object
+        [SyncVar]
+        public bool IsTheServerPlayer = false;
+
         private GameObject previsObject = null;
+
+        [SyncVar]
+        public string PrevisTagToLoad;
+
+        [Command]
+        public void CmdUpdatePrevisTagToLoad(string str)
+        {
+            PrevisTagToLoad = str;
+            foreach (GameObject go in GameObject.FindGameObjectsWithTag("Player"))
+            {
+                PlayerController pc = go.GetComponent<PlayerController>();
+                // we actually only need to set PrevisTagToLoad string of server game controller
+                pc.PrevisTagToLoad = str;
+            }
+        }
 
         /// <summary>
         /// Sets the localPosition and localRotation on clients.
@@ -104,7 +125,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
             Debug.LogFormat("AnchorEstablished for {0} was {1} is now {2}", PlayerName, AnchorEstablished, update);
             AnchorEstablished = update;
             // only draw the mesh for the player if the anchor is found.
-            //GetComponentInChildren<MeshRenderer>().enabled = update;
+            GetComponentInChildren<MeshRenderer>().enabled = update;
         }
 
         /// <summary>
@@ -216,12 +237,13 @@ namespace HoloToolkit.Unity.SharingWithUNET
             {
                 // If we are the local player then we want to have airtaps 
                 // sent to this object so that projectiles can be spawned.
+                Debug.Log("PlayerController Start isLocalPlayer");
                 InputManager.Instance.AddGlobalListener(gameObject);
                 InitializeLocalPlayer();
             }
             else
             {
-                Debug.Log("remote player");
+                Debug.Log("PlayerController Start remote player");
                 GetComponentInChildren<MeshRenderer>().material.color = Color.red;
                 AnchorEstablishedChanged(AnchorEstablished);
                 SharesAnchorsChanged(SharesSpatialAnchors);
@@ -230,6 +252,10 @@ namespace HoloToolkit.Unity.SharingWithUNET
             sharedWorldAnchorTransform = SharedCollection.Instance.gameObject.transform;
             transform.SetParent(sharedWorldAnchorTransform);
 
+            if (isLocalPlayer && isServer)
+            {
+                IsTheServerPlayer = true;
+            }
         }
 
         private void Update()
@@ -296,9 +322,9 @@ namespace HoloToolkit.Unity.SharingWithUNET
 
         private void OnDestroy()
         {
-            if (isLocalPlayer)
+            if (isLocalPlayer && gameObject)
             {
-                //InputManager.Instance.RemoveGlobalListener(gameObject);
+                InputManager.Instance.RemoveGlobalListener(gameObject);
             }
         }
 
@@ -308,7 +334,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
         /// </summary>
         public override void OnStartLocalPlayer()
         {
-            //GetComponentInChildren<MeshRenderer>().material.color = Color.blue;
+            GetComponentInChildren<MeshRenderer>().material.color = Color.blue;
         }
 
         /// <summary>
@@ -334,32 +360,28 @@ namespace HoloToolkit.Unity.SharingWithUNET
 
         public void StartLoadPrevisTag(string tag)
         {
-            Debug.Log("StartLoadPrevisTag");
+            Debug.Log("StartLoadPrevisTag: " + tag);
             if (isLocalPlayer)
             {
-                Debug.Log("Call CmdSpawnPrevisObject");
-                CmdSpawnPrevisObject(tag);
+                CmdUpdatePrevisTagToLoad(tag);
+                //CmdSpawnPrevisHolder();
             }
         }
 
+        /*
         [Command]
-        void CmdSpawnPrevisObject(string tag)
+        void CmdSpawnPrevisHolder()
         {
-            Debug.Log("CmdSpawnPrevisObject");
+            Debug.Log("CmdSpawnPrevisHolder");
             Vector3 objectDir = transform.forward;
             Vector3 objectPos = transform.position + transform.forward * 2.0f;
-            try
-            {
-                previsObject = Instantiate(previsModel, sharedWorldAnchorTransform.InverseTransformPoint(objectPos), Quaternion.Euler(sharedWorldAnchorTransform.TransformDirection(objectDir)));
-                previsObject.GetComponent<PrevisModelLoader>().previsTag = tag;
-                Debug.Log("NetworkServer.Spawn");
-                NetworkServer.Spawn(previsObject);
-            }
-            catch(Exception e)
-            {
-                Debug.LogException(e);
-            }
+
+            previsObject = Instantiate(previsModel, sharedWorldAnchorTransform.InverseTransformPoint(objectPos), Quaternion.Euler(sharedWorldAnchorTransform.TransformDirection(objectDir)));
+
+            Debug.Log("NetworkServer.Spawn");
+            NetworkServer.Spawn(previsObject);
         }
+        */
 
         // Update movement offset when object size changes
         public void UpdateMovementOffset(Vector3 offset)
@@ -392,6 +414,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
 
         public void UnloadModel()
         {
+            Debug.Log("UnloadModel");
             if (isLocalPlayer)
             {
                 CmdUnloadModel();
@@ -401,9 +424,16 @@ namespace HoloToolkit.Unity.SharingWithUNET
         [Command]
         void CmdUnloadModel()
         {
-            if(previsObject != null)
+            Debug.Log("CmdUnloadModel");
+            //if(previsObject != null)
             {
-                NetworkServer.Destroy(previsObject);
+                // to avoid loading a wrong tag
+                foreach (GameObject go in GameObject.FindGameObjectsWithTag("Player"))
+                {
+                    PlayerController pc = go.GetComponent<PlayerController>();
+                    pc.PrevisTagToLoad = "";
+                }
+                //NetworkServer.Destroy(previsObject);
                 RpcUnloadModel();
             }
         }
@@ -411,9 +441,24 @@ namespace HoloToolkit.Unity.SharingWithUNET
         [ClientRpc]
         void RpcUnloadModel()
         {
+            Debug.Log("RpcUnloadModel");
             MyUIManager.Instance.PrevisModelUnloaded();
+            GameObject gO = GameObject.FindGameObjectWithTag("PrevisCurrentModel");
+            if (gO)
+            {
+                GameObject.Destroy(gO);
+            }
+            GameObject loader = GameObject.FindGameObjectWithTag("PrevisModelHolder");
+            if(loader)
+            {
+                loader.GetComponent<PrevisModelLoader>().ResetLoader();
+            }
+            GameObject indicator = GameObject.FindGameObjectWithTag("DirectionalIndicator");
+            if(indicator)
+            {
+                GameObject.Destroy(indicator);
+            }
         }
-
 
     }
 }

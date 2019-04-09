@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/HoloPrevis.unity
-    guid: bdbba0157de4ade43a1e3eed95228e52
+    path: Assets/Scenes/HoloPrevisUNET.unity
+    guid: cc4751e366acbf840b90d27149b2cc47
   m_configObjects: {}

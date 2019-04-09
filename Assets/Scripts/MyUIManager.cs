@@ -19,11 +19,26 @@ public class MyUIManager : Singleton<MyUIManager>
 
     private PrevisTag previsTag = null;
 
+    // audio
+    [SerializeField]
+    private AudioClip clickButtonSound;
+    private AudioSource clickButtonAudioSource;
+
     public void Start()
     {
         CurrentModelEditMode = ModelEditType.Move;
 
         EnableMainMenu(false);
+
+        // audio
+        if(clickButtonSound)
+        {
+            clickButtonAudioSource = GetComponent<AudioSource>();
+            clickButtonAudioSource.clip = clickButtonSound;
+            clickButtonAudioSource.playOnAwake = false;
+            clickButtonAudioSource.spatialBlend = 1;
+            clickButtonAudioSource.dopplerLevel = 0;
+        }
     }
 
     public void EnableMainMenu(bool value = true)
@@ -78,6 +93,12 @@ public class MyUIManager : Singleton<MyUIManager>
     public void OnAppBarButtonClicked(string name)
     {
         Debug.Log("OnLoadButtonClicked " + name);
+        if(clickButtonAudioSource != null)
+        {
+            Debug.Log("Play Sound");
+            clickButtonAudioSource.Play();
+        }
+
         switch (name) {
             case "Scan":
                 ScanQR();

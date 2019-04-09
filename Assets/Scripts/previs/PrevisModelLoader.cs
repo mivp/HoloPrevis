@@ -16,7 +16,6 @@ using Ionic.Zip;
 
 public class PrevisModelLoader : MonoBehaviour
 {
-    public string previsTag = "";
     public Material defaultMaterial;
     public GameObject directionalIndicatorPrefab;
 
@@ -35,17 +34,54 @@ public class PrevisModelLoader : MonoBehaviour
     public Dictionary<string, MeshProperties> g_meshProperties = new Dictionary<string, MeshProperties>();
 
 
+    private string previsTag = "";
+    private bool previsLoaded = false;
+    
     private GameObject previsGroup = null;
     private string localDataFolder = string.Empty;
 
     public void Start()
     {
-        LoadPrevisData();
+        Debug.Log("PrevisModelLoader Start");
+        ResetLoader();
+    }
+
+    public void Update()
+    {
+        if (previsLoaded == true || PlayerController.Instance == null) return;
+
+        foreach (GameObject go in GameObject.FindGameObjectsWithTag("Player"))
+        {
+            PlayerController pc = go.GetComponent<PlayerController>();
+            if (pc.IsTheServerPlayer)
+            {
+                if (pc.PrevisTagToLoad != "")
+                {
+                    previsLoaded = true;
+                    previsTag = pc.PrevisTagToLoad;
+                    Debug.Log("PrevisModelLoader Update tag = " + previsTag);
+                    LoadPrevisData();
+                }
+            }
+        }
+
+    }
+
+    public void ResetLoader()
+    {
+        previsTag = "";
+        previsLoaded = false;
+        g_meshProperties.Clear();
     }
 
     private void LoadPrevisData()
     {
-        if (previsTag == "") return; // or load default tag
+        Debug.Log("LoadPrevisData");
+        if (previsTag == "")
+        {
+            Debug.Log("empty previsTag!");
+            return; // or load default tag
+        }
 
         // 1. get json data from web
         // DEBUG: load json file from storage
@@ -73,7 +109,9 @@ public class PrevisModelLoader : MonoBehaviour
         // StartCoroutine(loadMeshes());
         if (prevTag.type == "mesh")
         {
-            string meshParamsFile = Path.Combine(localDataFolder, "mesh.json");
+            string meshParamsFile =localDataFolder + "/mesh.json";
+            meshParamsFile = meshParamsFile.Replace("\\", "/");
+
             bool fileAvailable = File.Exists(meshParamsFile);
             if (fileAvailable == false)
             {
@@ -147,6 +185,7 @@ public class PrevisModelLoader : MonoBehaviour
         // previs object holder
         previsGroup = new GameObject();
         previsGroup.name = prevTag.tag;
+        previsGroup.tag = "PrevisCurrentModel";
         previsGroup.transform.parent = this.transform;
 
         string meshParamsFile = Application.streamingAssetsPath + "/" + previsTag + "/mesh.json";
@@ -261,18 +300,13 @@ public class PrevisModelLoader : MonoBehaviour
                 PlayerController.Instance.UpdateMovementOffset(new Vector3(0, scale * extends.y, 0));
             }
 
-            // indicator
-            //GameObject indicator = GameObject.FindGameObjectWithTag("DirectionalIndicator");
             if (directionalIndicatorPrefab != null)
             {
                 GameObject indicator = Instantiate(directionalIndicatorPrefab, Vector3.zero, Quaternion.identity);
-                if (indicator)
-                {
-                    indicator.transform.parent = this.transform;
-                    indicator.transform.localPosition = Vector3.zero;
-                    indicator.GetComponent<DirectionIndicator>().Cursor = GameObject.Find("Cursor");
-                    indicator.GetComponent<DirectionIndicator>().enabled = true;
-                }
+                indicator.GetComponent<DirectionIndicator>().Cursor = GameObject.Find("Cursor");
+                indicator.transform.parent = this.transform;
+                indicator.transform.localPosition = Vector3.zero;
+                indicator.GetComponent<DirectionIndicator>().enabled = true;
             }
 
             //model loaded
@@ -286,13 +320,6 @@ public class PrevisModelLoader : MonoBehaviour
     {
         gameObject.transform.localPosition = position;
         gameObject.transform.localScale = scale;
-        /*
-        foreach (Transform child in gameObject.transform)
-        {
-            GameObject c = child.gameObject;
-            c.transform.localPosition = Vector3.zero;
-        }
-        */
     }
 
     IEnumerator fetchPrevisPointCloud(PrevisTag prevTag)
@@ -301,15 +328,12 @@ public class PrevisModelLoader : MonoBehaviour
 
         previsGroup = new GameObject();
         previsGroup.name = prevTag.tag;
+        previsGroup.tag = "PrevisCurrentModel";
         previsGroup.transform.parent = this.transform;
 
         string cloudPath = localDataFolder + "/potree/";
         cloudPath = cloudPath.Replace("\\", "/");
         new PrevisPotreeHelper().LoadPointCloud(cloudPath, previsGroup, 3, 6);
-
-        //Vector3 extends = GetGameObjectBound(previsGroup).extents;
-        //Debug.Log("center: " + GetGameObjectBound(previsGroup).center.ToString());
-        //Debug.Log("extend: " + extends.ToString());
 
         AllObjectsLoaded(prevTag, 1.5f);
 
