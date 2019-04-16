@@ -427,13 +427,12 @@ namespace HoloToolkit.Unity.SharingWithUNET
             Debug.Log("CmdUnloadModel");
             //if(previsObject != null)
             {
-                // to avoid loading a wrong tag
+                // to avoid loading the destroyed tag again
                 foreach (GameObject go in GameObject.FindGameObjectsWithTag("Player"))
                 {
                     PlayerController pc = go.GetComponent<PlayerController>();
                     pc.PrevisTagToLoad = "";
                 }
-                //NetworkServer.Destroy(previsObject);
                 RpcUnloadModel();
             }
         }
@@ -442,6 +441,13 @@ namespace HoloToolkit.Unity.SharingWithUNET
         void RpcUnloadModel()
         {
             Debug.Log("RpcUnloadModel");
+            // to avoid loading the destroyed tag again
+            foreach (GameObject go in GameObject.FindGameObjectsWithTag("Player"))
+            {
+                PlayerController pc = go.GetComponent<PlayerController>();
+                pc.PrevisTagToLoad = "";
+            }
+
             MyUIManager.Instance.PrevisModelUnloaded();
             GameObject gO = GameObject.FindGameObjectWithTag("PrevisCurrentModel");
             if (gO)

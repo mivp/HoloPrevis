@@ -90,6 +90,24 @@ public class MyUIManager : Singleton<MyUIManager>
         } 
     }
 
+    public void MoveModel()
+    {
+        CurrentModelEditMode = ModelEditType.Move;
+        UpdateText("mode: move");
+    }
+
+    public void RotateModel()
+    {
+        CurrentModelEditMode = ModelEditType.Rotate;
+        UpdateText("mode: rotate");
+    }
+
+    public void ScaleModel()
+    {
+        CurrentModelEditMode = ModelEditType.Scale;
+        UpdateText("mode: scale");
+    }
+
     public void OnAppBarButtonClicked(string name)
     {
         Debug.Log("OnLoadButtonClicked " + name);
