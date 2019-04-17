@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 114879498715296350}
   - component: {fileID: 114401061186821914}
   - component: {fileID: 114543432201120186}
+  - component: {fileID: 1284158581138876707}
   m_Layer: 0
   m_Name: PrevisModelHolder
   m_TagString: PrevisModelHolder
@@ -46,7 +47,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20a8c9eac4ef5264ab1f50d69c0d67fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  previsTag: 
   defaultMaterial: {fileID: 2100000, guid: 8c3e9c1ff57eeca46ad52891eda813fd, type: 2}
   directionalIndicatorPrefab: {fileID: 5304545692220661588, guid: ec64f857075b5b047964fe887dac3108,
     type: 3}
@@ -121,3 +121,15 @@ MonoBehaviour:
   m_SnapThreshold: 5
   m_InterpolateRotation: 1
   m_InterpolateMovement: 1
+--- !u!114 &1284158581138876707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1652190765855836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25b5486c0a1e95543913acb0da79c6ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

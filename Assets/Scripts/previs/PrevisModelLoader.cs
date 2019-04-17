@@ -74,6 +74,14 @@ public class PrevisModelLoader : MonoBehaviour
         g_meshProperties.Clear();
     }
 
+    public void LoadTestTag(string tag)
+    {
+        previsLoaded = true;
+        previsTag = tag;
+        Debug.Log("PrevisModelLoader Update tag = " + previsTag);
+        LoadPrevisData();
+    }
+
     private void LoadPrevisData()
     {
         Debug.Log("LoadPrevisData");
@@ -101,7 +109,7 @@ public class PrevisModelLoader : MonoBehaviour
         localDataFolder = Application.persistentDataPath + "/" + previsTag;
         Debug.Log("local data folder: " + localDataFolder);
         if(MyUIManager.Instance)
-            MyUIManager.Instance.UpdateText(localDataFolder);
+            MyUIManager.Instance.UpdateText("LOADING...");
         Directory.CreateDirectory(localDataFolder);
 
         // 5. uncompress and load models
@@ -237,7 +245,10 @@ public class PrevisModelLoader : MonoBehaviour
                 }
             }
 
-            AllObjectsLoaded(prevTag);
+            if (prevTag.tag == "948a98") // baybridge
+                AllObjectsLoaded(prevTag, 1.0f);
+            else
+                AllObjectsLoaded(prevTag);
 
         }
 
@@ -267,6 +278,7 @@ public class PrevisModelLoader : MonoBehaviour
             mr.reflectionProbeUsage = ReflectionProbeUsage.Off;
             mr.shadowCastingMode = ShadowCastingMode.Off;
             mr.receiveShadows = false;
+            mr.enabled = false;
         }
 
         // create mesh collisder
@@ -278,6 +290,7 @@ public class PrevisModelLoader : MonoBehaviour
             {
                 MeshCollider mc = go.AddComponent<MeshCollider>() as MeshCollider;
                 mc.sharedMesh = m;
+                mc.enabled = false;
             }
         }
     }
@@ -287,6 +300,10 @@ public class PrevisModelLoader : MonoBehaviour
         Debug.Log("Finished loading");
         if (previsGroup)
         {
+            // enable renderer and collider
+            new MyUnityHelpers().EnableGameObject(previsGroup, true);
+
+            // place object
             Vector3 center = GetGameObjectBound(previsGroup).center;
             Vector3 extends = GetGameObjectBound(previsGroup).extents;
             Debug.Log("center: " + center.ToString() + " extend: " + extends.ToString());
@@ -315,13 +332,13 @@ public class PrevisModelLoader : MonoBehaviour
         }
     }
 
-    // === POINT CLOUD ===
     void UpdateObjectTransform(GameObject gameObject, Vector3 position, Vector3 scale)
     {
         gameObject.transform.localPosition = position;
         gameObject.transform.localScale = scale;
     }
 
+    // === POINT CLOUD ===
     IEnumerator fetchPrevisPointCloud(PrevisTag prevTag)
     {
         string previsTag = prevTag.tag;
@@ -333,11 +350,10 @@ public class PrevisModelLoader : MonoBehaviour
 
         string cloudPath = localDataFolder + "/potree/";
         cloudPath = cloudPath.Replace("\\", "/");
-        new PrevisPotreeHelper().LoadPointCloud(cloudPath, previsGroup, 3, 6);
+        PrevisPotreeHelper potreeHelper = GetComponent<PrevisPotreeHelper>();
+        yield return StartCoroutine(potreeHelper.LoadPointCloud(cloudPath, previsGroup, 3, 6));
 
-        AllObjectsLoaded(prevTag, 1.5f);
-
-        yield return null;
+        AllObjectsLoaded(prevTag, 1.5f);;
     }
 
 }

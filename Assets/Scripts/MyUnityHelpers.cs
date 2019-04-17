@@ -7,6 +7,18 @@ using ICSharpCode.SharpZipLib.Zip;
 
 class MyUnityHelpers
 {
+    public void EnableGameObject(GameObject gO, bool value=true)
+    {
+        foreach (MeshRenderer mr in gO.GetComponentsInChildren<MeshRenderer>())
+        {
+            mr.enabled = value;
+        }
+        foreach (Collider mc in gO.GetComponentsInChildren<Collider>())
+        {
+            mc.enabled = value;
+        }
+    }
+
     public void ExtractZipFile(string zipFilePath, string outDirPath)
     {
         //Debug.Log("ExtractZipFile " + zipFilePath);

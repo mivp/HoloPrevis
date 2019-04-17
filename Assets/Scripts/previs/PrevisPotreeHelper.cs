@@ -436,6 +436,7 @@ public class PointMeshConfiguration
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         renderer.receiveShadows = false;
         renderer.material = material;
+        renderer.enabled = false;
 
         int[] indecies = new int[vertexData.Length];
         for (int i = 0; i < vertexData.Length; ++i)
@@ -523,7 +524,11 @@ public class PotreeNode
         {
             GameObject gO = configuration.CreateGameObject(metaData.cloudName + "/" + "r" + name + " (" + verticesToStore.Length + ")", verticesToStore, colorsToStore, boundingBox);
             if(GetLevel() == 0)
-                gO.AddComponent<BoxCollider>();
+            {
+               BoxCollider bC = gO.AddComponent<BoxCollider>();
+               bC.enabled = false;
+            }
+                
             gameObjects.Add(gO);
         }
         else
@@ -540,7 +545,10 @@ public class PotreeNode
                 restColors = restColors.Skip(amount).ToArray();
                 GameObject gO = configuration.CreateGameObject(metaData.cloudName + "/" + "r" + name + "_" + index + " (" + vertices.Length + ")", vertices, colors, boundingBox);
                 if (GetLevel() == 0)
-                    gO.AddComponent<BoxCollider>();
+                {
+                    BoxCollider bC = gO.AddComponent<BoxCollider>();
+                    bC.enabled = false;
+                }
                 gameObjects.Add(gO);
                 amount = Math.Min(max, vertices.Length);
                 index++;
@@ -620,17 +628,19 @@ public class PotreeNode
 
 }
 
-public class PrevisPotreeHelper
+public class PrevisPotreeHelper:MonoBehaviour
 {
     public PointMeshConfiguration meshConfiguration;
     // private
     PointCloudMetaData pointCloudMetaData;
+    List<PotreeNode> listNodes;
     
     // === FUNCTIONS ===
     // Load PointCloud until level 5 and add to parentObject
-    public void LoadPointCloud(string cloudPath, GameObject parentObject, int level = 4, int pointRadius = 5)
+    public IEnumerator LoadPointCloud(string cloudPath, GameObject parentObject, int level = 4, int pointRadius = 5)
     {
         meshConfiguration = new PointMeshConfiguration(parentObject, level, pointRadius);
+        listNodes = new List<PotreeNode>();
         
         // point cloud metadata
         pointCloudMetaData = new PointCloudMetaData();
@@ -652,10 +662,28 @@ public class PrevisPotreeHelper
         LoadHierarchy(dataRPath, metaData, rootNode);
 
         // load pointcloud data
-        LoadAllPoints(dataRPath, metaData, rootNode);
+        //LoadAllPoints(dataRPath, metaData, rootNode);
+        GetListNodes(dataRPath, metaData, rootNode);
+
+        // now load data for nodes
+        float startTime = DateTime.Now.Millisecond;
+        foreach(PotreeNode node in listNodes)
+        {
+            LoadPoints(dataRPath, metaData, node);
+            //Debug.Log(DateTime.Now.Millisecond);
+            if(DateTime.Now.Millisecond - startTime > 100.0f)
+            {
+                //Debug.Log("resume display");
+                startTime = DateTime.Now.Millisecond;
+                yield return null;
+            }
+        }
+        listNodes.Clear();
 
         // create gameobjects
         rootNode.CreateAllGameObjects(meshConfiguration);
+
+        yield return null;
     }
 
     private static void LoadHierarchy(string dataRPath, PointCloudMetaData metaData, PotreeNode root)
@@ -697,6 +725,21 @@ public class PrevisPotreeHelper
             }
             //PotreeNode n = nextNodes.Dequeue();
             //LoadHierarchy(dataRPath, metaData, n);
+        }
+    }
+
+    private void GetListNodes(string dataRPath, PointCloudMetaData metaData, PotreeNode node)
+    {
+        listNodes.Add(node);
+        // load until maxLevel
+        if (node.GetLevel() >= meshConfiguration.maxLevel)
+            return;
+        for (int i = 0; i < 8; i++)
+        {
+            if (node.HasChild(i))
+            {
+                GetListNodes(dataRPath, metaData, node.GetChild(i));
+            }
         }
     }
 
