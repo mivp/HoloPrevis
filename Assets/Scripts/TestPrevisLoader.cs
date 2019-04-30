@@ -9,7 +9,8 @@ public class TestPrevisLoader : MonoBehaviour
     void Start()
     {
         PrevisModelLoader modelLoader = GetComponent<PrevisModelLoader>();
-        modelLoader.LoadTestTag("d3ef22");
+        //modelLoader.LoadTestTag("4194b4"); // heart
+        modelLoader.LoadTestTag("d3ef22"); // tikal
     }
 
 }

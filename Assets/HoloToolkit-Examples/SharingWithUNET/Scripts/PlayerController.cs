@@ -324,7 +324,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
         {
             if (isLocalPlayer && gameObject)
             {
-                InputManager.Instance.RemoveGlobalListener(gameObject);
+                //InputManager.Instance.RemoveGlobalListener(gameObject);
             }
         }
 

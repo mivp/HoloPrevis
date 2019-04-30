@@ -18,6 +18,7 @@ public class PrevisModelLoader : MonoBehaviour
 {
     public Material defaultMaterial;
     public GameObject directionalIndicatorPrefab;
+    public string previsURL = "https://mivp-dws1.erc.monash.edu:3000/";
 
     public class MeshProperties
     {
@@ -39,6 +40,7 @@ public class PrevisModelLoader : MonoBehaviour
     
     private GameObject previsGroup = null;
     private string localDataFolder = string.Empty;
+    
 
     public void Start()
     {
@@ -60,7 +62,7 @@ public class PrevisModelLoader : MonoBehaviour
                     previsLoaded = true;
                     previsTag = pc.PrevisTagToLoad;
                     Debug.Log("PrevisModelLoader Update tag = " + previsTag);
-                    LoadPrevisData();
+                    StartCoroutine(LoadPrevisData());
                 }
             }
         }
@@ -79,16 +81,24 @@ public class PrevisModelLoader : MonoBehaviour
         previsLoaded = true;
         previsTag = tag;
         Debug.Log("PrevisModelLoader Update tag = " + previsTag);
-        LoadPrevisData();
+        StartCoroutine(LoadPrevisData());
     }
 
-    private void LoadPrevisData()
+    private IEnumerator downloadTextFromURL(string url, System.Action<string> callback)
+    {
+        Debug.Log("download json text from " + url);
+        UnityEngine.Networking.UnityWebRequest myWr = UnityEngine.Networking.UnityWebRequest.Get(url);
+        yield return myWr.SendWebRequest();
+        callback(myWr.downloadHandler.text);
+    }
+
+    private IEnumerator LoadPrevisData()
     {
         Debug.Log("LoadPrevisData");
         if (previsTag == "")
         {
             Debug.Log("empty previsTag!");
-            return; // or load default tag
+            yield break;
         }
 
         // 1. get json data from web
@@ -96,42 +106,126 @@ public class PrevisModelLoader : MonoBehaviour
         var jsonFileName = Path.Combine(Application.streamingAssetsPath, previsTag);
         jsonFileName = Path.Combine(jsonFileName, "info.json");
         Debug.Log("info json : " + jsonFileName);
-        string jsonText = GetTextFileContent(jsonFileName);
+
+        if (MyUIManager.Instance)
+            MyUIManager.Instance.UpdateText("LOADING INFO...");
+
+        bool localCacheAvailable = File.Exists(jsonFileName); // check if data available in StreamingAssets folder
+        string jsonText = "";
+        if (localCacheAvailable)
+        {
+            jsonText = GetTextFileContent(jsonFileName);
+        }
+        else // need to get from web
+        {
+            string tagURL = previsURL + "rest/info?tag=" + previsTag;
+            yield return StartCoroutine(downloadTextFromURL(tagURL, (value) =>
+            {
+                jsonText = value;
+            }));
+        }
 
         // 2. parse json data for the tag
         PrevisTag prevTag = JsonUtility.FromJson<PrevisTag>(jsonText);
         Debug.Log("Tag: " + prevTag.tag);
         Debug.Log("Type: " + prevTag.type);
 
-        // 3. download processed data (zip file)
-
-        // 4. create directory to store uncompressed data
+        // 3. create directory to store uncompressed data
         localDataFolder = Application.persistentDataPath + "/" + previsTag;
         Debug.Log("local data folder: " + localDataFolder);
-        if(MyUIManager.Instance)
-            MyUIManager.Instance.UpdateText("LOADING...");
         Directory.CreateDirectory(localDataFolder);
+
+        // 4. download processed data to localDataFolder
+        if(localCacheAvailable == false)
+        {
+            if (MyUIManager.Instance)
+                MyUIManager.Instance.UpdateText("DOWNLOADING...");
+            if (prevTag.type == "mesh")
+            {
+                string meshURL = previsURL + "data/tags/" + previsTag + "/mesh_processed.zip";
+                Debug.Log("Load mesh_processed.zip file from previs server");
+                UnityEngine.Networking.UnityWebRequest myWr = UnityEngine.Networking.UnityWebRequest.Get(meshURL);
+                yield return myWr.SendWebRequest();
+                string zipFileName = localDataFolder + "/mesh_processed.zip";
+                using (BinaryWriter writer = new BinaryWriter(File.Open(zipFileName, FileMode.Create)))
+                {
+                    writer.Write(myWr.downloadHandler.data);
+                }
+            }
+            else if(prevTag.type == "point")
+            {
+                string pointURL = previsURL + "data/tags/" + previsTag + "/point_processed.zip";
+                Debug.Log("Load point_processed.zip file from previs server");
+                UnityEngine.Networking.UnityWebRequest myWr = UnityEngine.Networking.UnityWebRequest.Get(pointURL);
+                yield return myWr.SendWebRequest();
+                string zipFileName = localDataFolder + "/point_processed.zip";
+                using (BinaryWriter writer = new BinaryWriter(File.Open(zipFileName, FileMode.Create)))
+                {
+                    writer.Write(myWr.downloadHandler.data);
+                }
+            }
+            else if(prevTag.type == "volume")
+            {
+                // TODO
+                Debug.Log("Volume - Under development");
+            }
+            else
+            {
+                Debug.Log("Invalid data type");
+            }
+        }
 
         // 5. uncompress and load models
         // launch the mesh loader function as a coroutine so that the program will be semi-interactive while loading meshes :)
         // StartCoroutine(loadMeshes());
         if (prevTag.type == "mesh")
         {
-            string meshParamsFile =localDataFolder + "/mesh.json";
+            string meshParamsFile = localDataFolder + "/mesh.json";
             meshParamsFile = meshParamsFile.Replace("\\", "/");
 
             bool fileAvailable = File.Exists(meshParamsFile);
             if (fileAvailable == false)
             {
                 Debug.Log("Unzip mesh data...");
-                string zipFileName = Application.streamingAssetsPath + "/" + previsTag + "/mesh_processed.zip";
+                string zipFileName;
+                if (localCacheAvailable == true)
+                {
+                    zipFileName = Application.streamingAssetsPath + "/" + previsTag + "/mesh_processed.zip";
+                }
+                else
+                {
+                    zipFileName = localDataFolder + "/mesh_processed.zip";
+                }
                 zipFileName = zipFileName.Replace("\\", "/");
 
+                if (MyUIManager.Instance)
+                    MyUIManager.Instance.UpdateText("EXTRACTING...");
                 new MyUnityHelpers().ExtractZipFile(zipFileName, localDataFolder);
             }
 
             Debug.Log("Loading a mesh...");
-            StartCoroutine(fetchPrevisMesh(prevTag));
+            string meshParams = "";
+            if(localCacheAvailable == true)
+            {
+                string paramFile = Application.streamingAssetsPath + "/" + previsTag + "/mesh.json";
+                paramFile = paramFile.Replace("\\", "/");
+                Debug.Log("Get mesh params " + paramFile);
+                meshParams = GetTextFileContent(paramFile);
+            }
+            else
+            {
+                string paramURL = previsURL + "data/tags/" + previsTag + "/mesh_result/mesh.json";
+                yield return StartCoroutine(downloadTextFromURL(paramURL, (value) =>
+                {
+                    meshParams = value;
+                }));
+            }
+
+            Debug.Log(meshParams);
+
+            if (MyUIManager.Instance)
+                MyUIManager.Instance.UpdateText("LOADING...");
+            StartCoroutine(fetchPrevisMesh(prevTag, meshParams));
         }
         else if (prevTag.type == "point")
         {
@@ -141,23 +235,34 @@ public class PrevisModelLoader : MonoBehaviour
             bool fileAvailable = File.Exists(pointCloudFile);
             if (fileAvailable == false)
             {
-                Debug.Log("Unzip point data...");
-                string zipFileName = Application.streamingAssetsPath + "/" + previsTag + "/point_processed.zip";
+                string zipFileName;
+                if (localCacheAvailable == true)
+                {
+                    zipFileName = Application.streamingAssetsPath + "/" + previsTag + "/point_processed.zip";
+                }
+                else
+                {
+                    zipFileName = localDataFolder + "/point_processed.zip";
+                }
                 zipFileName = zipFileName.Replace("\\", "/");
 
+                Debug.Log("Unzip point data...");
+                if (MyUIManager.Instance)
+                    MyUIManager.Instance.UpdateText("EXTRACTING...");
                 new MyUnityHelpers().ExtractZipFile(zipFileName, localDataFolder);
             }
 
             Debug.Log("Loading a point...");
+            if (MyUIManager.Instance)
+                MyUIManager.Instance.UpdateText("LOADING...");
             StartCoroutine(fetchPrevisPointCloud(prevTag));
-            return;
         }
         else
         {
             Debug.Log("Error: invalid data type");
-            return;
         }
 
+        yield return null;
     }
 
     string GetTextFileContent(string filename)
@@ -185,7 +290,7 @@ public class PrevisModelLoader : MonoBehaviour
         yield return null;
     }
 
-    IEnumerator fetchPrevisMesh(PrevisTag prevTag)
+    IEnumerator fetchPrevisMesh(PrevisTag prevTag, string meshParams)
     {
         List<string> objectNames = new List<string>();
         List<string> OBJNames = new List<string>();
@@ -195,10 +300,6 @@ public class PrevisModelLoader : MonoBehaviour
         previsGroup.name = prevTag.tag;
         previsGroup.tag = "PrevisCurrentModel";
         previsGroup.transform.parent = this.transform;
-
-        string meshParamsFile = Application.streamingAssetsPath + "/" + previsTag + "/mesh.json";
-        meshParamsFile = meshParamsFile.Replace("\\", "/");
-        string meshParams = GetTextFileContent(meshParamsFile);
 
         PrevisSceneParams meshParamsJson = JsonUtility.FromJson<PrevisSceneParams>(meshParams);
 
