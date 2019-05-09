@@ -78,9 +78,16 @@ public class MyUIManager : Singleton<MyUIManager>
             UpdateText("pointcloud loaded, mode: move");
     }
 
-    public void PrevisModelUnloaded()
+    public void PrevisModelUnloaded(string err)
     {
-        if(previsTag != null)
+        if (err != "")
+        {
+            UpdateText(err);
+            previsTag = null;
+            return;
+        }
+
+        if (previsTag != null)
         {
             if (previsTag.type == "mesh")
                 UpdateText("mesh unloaded");
@@ -158,6 +165,7 @@ public class MyUIManager : Singleton<MyUIManager>
         PlayerController.Instance.StartLoadPrevisTag("4194b4");   // mesh heart
         //PlayerController.Instance.StartLoadPrevisTag("d3ef22");   // tikal point cloud
         //PlayerController.Instance.StartLoadPrevisTag("948a98");     // mesh baybridge
+        //PlayerController.Instance.StartLoadPrevisTag("634b73");   //to test network download
     }
 
     private void ScanQR()
@@ -165,7 +173,7 @@ public class MyUIManager : Singleton<MyUIManager>
         if (PlayerController.Instance == null || previsTag != null) return;
 
 #if !UNITY_EDITOR
-        UpdateText("scan QR for 30s");
+        UpdateText("scan QR for 60s");
     MediaFrameQrProcessing.Wrappers.ZXingQrCodeScanner.ScanFirstCameraForQrCode(
         result =>
         {
@@ -194,7 +202,7 @@ public class MyUIManager : Singleton<MyUIManager>
 #endif
     }
 
-    private void UnloadModel()
+    public void UnloadModel()
     {
         if(PlayerController.Instance != null && previsTag != null)
         {

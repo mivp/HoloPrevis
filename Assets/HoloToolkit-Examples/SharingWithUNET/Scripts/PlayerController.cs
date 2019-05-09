@@ -412,17 +412,17 @@ namespace HoloToolkit.Unity.SharingWithUNET
             }
         }
 
-        public void UnloadModel()
+        public void UnloadModel(string err="")
         {
             Debug.Log("UnloadModel");
             if (isLocalPlayer)
             {
-                CmdUnloadModel();
+                CmdUnloadModel(err);
             }
         }
 
         [Command]
-        void CmdUnloadModel()
+        void CmdUnloadModel(string err)
         {
             Debug.Log("CmdUnloadModel");
             //if(previsObject != null)
@@ -433,12 +433,12 @@ namespace HoloToolkit.Unity.SharingWithUNET
                     PlayerController pc = go.GetComponent<PlayerController>();
                     pc.PrevisTagToLoad = "";
                 }
-                RpcUnloadModel();
+                RpcUnloadModel(err);
             }
         }
 
         [ClientRpc]
-        void RpcUnloadModel()
+        void RpcUnloadModel(string err)
         {
             Debug.Log("RpcUnloadModel");
             // to avoid loading the destroyed tag again
@@ -448,7 +448,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
                 pc.PrevisTagToLoad = "";
             }
 
-            MyUIManager.Instance.PrevisModelUnloaded();
+            MyUIManager.Instance.PrevisModelUnloaded(err);
             GameObject gO = GameObject.FindGameObjectWithTag("PrevisCurrentModel");
             if (gO)
             {

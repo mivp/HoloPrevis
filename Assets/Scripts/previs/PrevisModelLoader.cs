@@ -18,7 +18,7 @@ public class PrevisModelLoader : MonoBehaviour
 {
     public Material defaultMaterial;
     public GameObject directionalIndicatorPrefab;
-    public string previsURL = "https://mivp-dws1.erc.monash.edu:3000/";
+    private string previsURL = "http://mivp-dws1.erc.monash.edu:3003/";
 
     public class MeshProperties
     {
@@ -86,10 +86,42 @@ public class PrevisModelLoader : MonoBehaviour
 
     private IEnumerator downloadTextFromURL(string url, System.Action<string> callback)
     {
-        Debug.Log("download json text from " + url);
-        UnityEngine.Networking.UnityWebRequest myWr = UnityEngine.Networking.UnityWebRequest.Get(url);
-        yield return myWr.SendWebRequest();
-        callback(myWr.downloadHandler.text);
+        //url = "http://118.138.241.179:3000/rest/info?tag=387494";
+        using (UnityEngine.Networking.UnityWebRequest webRequest = UnityEngine.Networking.UnityWebRequest.Get(url))
+        {
+            yield return webRequest.SendWebRequest();
+            if (webRequest.isNetworkError)
+            {
+                Debug.Log("Error: " + webRequest.error);
+                callback("");
+            }
+            else
+            {
+                callback(webRequest.downloadHandler.text);
+            }
+        }
+        yield return null;
+    }
+
+    private IEnumerator downloadFileFromURL(string url, string destfile)
+    {
+        using (UnityEngine.Networking.UnityWebRequest webRequest = UnityEngine.Networking.UnityWebRequest.Get(url))
+        {
+            yield return webRequest.SendWebRequest();
+            if (webRequest.isNetworkError)
+            {
+                Debug.Log("Error: " + webRequest.error);
+            }
+            else
+            {
+                using (BinaryWriter writer = new BinaryWriter(File.Open(destfile, FileMode.Create)))
+                {
+                    writer.Write(webRequest.downloadHandler.data);
+                }
+            }
+
+        }
+        yield return null;
     }
 
     private IEnumerator LoadPrevisData()
@@ -119,10 +151,20 @@ public class PrevisModelLoader : MonoBehaviour
         else // need to get from web
         {
             string tagURL = previsURL + "rest/info?tag=" + previsTag;
+            Debug.Log("download json text from " + tagURL);
             yield return StartCoroutine(downloadTextFromURL(tagURL, (value) =>
             {
                 jsonText = value;
+                Debug.Log(jsonText);
             }));
+        }
+
+        if (jsonText == "")
+        {
+            Debug.Log("Failed to load info");
+            if (PlayerController.Instance)
+                PlayerController.Instance.UnloadModel("ERROR: FAILED TO LOAD INFO...");
+            yield break;
         }
 
         // 2. parse json data for the tag
@@ -142,36 +184,33 @@ public class PrevisModelLoader : MonoBehaviour
                 MyUIManager.Instance.UpdateText("DOWNLOADING...");
             if (prevTag.type == "mesh")
             {
-                string meshURL = previsURL + "data/tags/" + previsTag + "/mesh_processed.zip";
+                
                 Debug.Log("Load mesh_processed.zip file from previs server");
-                UnityEngine.Networking.UnityWebRequest myWr = UnityEngine.Networking.UnityWebRequest.Get(meshURL);
-                yield return myWr.SendWebRequest();
+                string meshURL = previsURL + "data/tags/" + previsTag + "/mesh_processed.zip";
                 string zipFileName = localDataFolder + "/mesh_processed.zip";
-                using (BinaryWriter writer = new BinaryWriter(File.Open(zipFileName, FileMode.Create)))
-                {
-                    writer.Write(myWr.downloadHandler.data);
-                }
+                yield return StartCoroutine(downloadFileFromURL(meshURL, zipFileName));
             }
             else if(prevTag.type == "point")
             {
-                string pointURL = previsURL + "data/tags/" + previsTag + "/point_processed.zip";
                 Debug.Log("Load point_processed.zip file from previs server");
-                UnityEngine.Networking.UnityWebRequest myWr = UnityEngine.Networking.UnityWebRequest.Get(pointURL);
-                yield return myWr.SendWebRequest();
+                string pointURL = previsURL + "data/tags/" + previsTag + "/point_processed.zip";
                 string zipFileName = localDataFolder + "/point_processed.zip";
-                using (BinaryWriter writer = new BinaryWriter(File.Open(zipFileName, FileMode.Create)))
-                {
-                    writer.Write(myWr.downloadHandler.data);
-                }
+                yield return StartCoroutine(downloadFileFromURL(pointURL, zipFileName));
             }
             else if(prevTag.type == "volume")
             {
                 // TODO
                 Debug.Log("Volume - Under development");
+                if (PlayerController.Instance)
+                    PlayerController.Instance.UnloadModel("ERROR: VOLUME IS NOT SUPPORTED");
+                yield break;
             }
             else
             {
                 Debug.Log("Invalid data type");
+                if (PlayerController.Instance)
+                    PlayerController.Instance.UnloadModel("ERROR: INVALID TYPE");
+                yield break;
             }
         }
 
@@ -221,7 +260,7 @@ public class PrevisModelLoader : MonoBehaviour
                 }));
             }
 
-            Debug.Log(meshParams);
+            //Debug.Log(meshParams);
 
             if (MyUIManager.Instance)
                 MyUIManager.Instance.UpdateText("LOADING...");
@@ -257,9 +296,20 @@ public class PrevisModelLoader : MonoBehaviour
                 MyUIManager.Instance.UpdateText("LOADING...");
             StartCoroutine(fetchPrevisPointCloud(prevTag));
         }
+        else if (prevTag.type == "volume")
+        {
+            // TODO
+            Debug.Log("Volume - Under development");
+            if (PlayerController.Instance)
+                PlayerController.Instance.UnloadModel("ERROR: VOLUME IS NOT SUPPORTED");
+            yield break;
+        }
         else
         {
-            Debug.Log("Error: invalid data type");
+            Debug.Log("Invalid data type");
+            if (PlayerController.Instance)
+                PlayerController.Instance.UnloadModel("ERROR: INVALID TYPE");
+            yield break;
         }
 
         yield return null;
