@@ -2,17 +2,15 @@
 
 ## Current functions (master branch)
 
-- Load a previs mesh model or pointcloud by scanning a QR code. The model data is stored locally for demo (StreamingAssets)
+- Load a previs mesh model or pointcloud by scanning a QR code
 - Provide a GUI menu to load/unload, scan QR code and modify the loaded object (move, rotate, scale)
-- Support multi-hololens using UNET (only user who loads object can unload)
+- Support multi-hololens using UNET
 - Highligh object part when a user focus on it
 - Sounds (environment + button click)
 
-
 ## Bugs or improvement features
 
-- Add volume (slice) support
-- Add network download
+- Add volume data support
 
 ## Dev enviroment
 
