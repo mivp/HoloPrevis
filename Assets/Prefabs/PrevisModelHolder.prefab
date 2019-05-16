@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20a8c9eac4ef5264ab1f50d69c0d67fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultMaterial: {fileID: 2100000, guid: 8c3e9c1ff57eeca46ad52891eda813fd, type: 2}
+  defaultMaterial: {fileID: 2100000, guid: 90882cc22c31b254a8bd41bb6b8f8f81, type: 2}
   directionalIndicatorPrefab: {fileID: 5304545692220661588, guid: ec64f857075b5b047964fe887dac3108,
     type: 3}
 --- !u!114 &114879498715296350

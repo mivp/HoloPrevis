@@ -45,7 +45,7 @@ namespace HoloToolkit.Unity.SharingWithUNET
         private float RotationSensitivity = 10.0f;
 
         [SerializeField]
-        float ResizeSpeedFactor = 1.5f;
+        float ResizeSpeedFactor = 0.2f;
 
         [SerializeField]
         float ResizeScaleFactor = 1.5f;
@@ -123,12 +123,12 @@ namespace HoloToolkit.Unity.SharingWithUNET
                 float resizeX, resizeY, resizeZ;
                 resizeX = resizeY = resizeZ = eventData.CumulativeDelta.x * ResizeScaleFactor;
                 float MinScale = 0.4f;
-                float MaxScale = 4.0f;
+                float MaxScale = 10.0f;
                 resizeX = Mathf.Clamp(lastScale.x + resizeX, MinScale, MaxScale);
                 resizeY = Mathf.Clamp(lastScale.y + resizeY, MinScale, MaxScale);
                 resizeZ = Mathf.Clamp(lastScale.z + resizeZ, MinScale, MaxScale);
 
-                transform.localScale = Vector3.Lerp(transform.localScale, new Vector3(resizeX, resizeY, resizeZ), 0.1f); // resize speed factor
+                transform.localScale = Vector3.Lerp(transform.localScale, new Vector3(resizeX, resizeY, resizeZ), ResizeSpeedFactor); // resize speed factor
                 UpdateTransformNetwork();
             }
         }

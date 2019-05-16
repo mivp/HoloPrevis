@@ -105,6 +105,12 @@ public class PrevisModelLoader : MonoBehaviour
 
     private IEnumerator downloadFileFromURL(string url, string destfile)
     {
+        if(File.Exists(destfile))
+        {
+            Debug.Log("File exist, abort downloading");
+            yield break;
+        }
+
         using (UnityEngine.Networking.UnityWebRequest webRequest = UnityEngine.Networking.UnityWebRequest.Get(url))
         {
             yield return webRequest.SendWebRequest();
@@ -363,7 +369,7 @@ public class PrevisModelLoader : MonoBehaviour
                 GameObject groupParentNode = new GameObject();
                 groupParentNode.name = pmp.name;
                 groupParentNode.transform.parent = previsGroup.transform;
-                if(prevTag.tag != "948a98") // TODO: ignore for baybride model for now. need a better way to enable/disable this
+                if(prevTag.tag == "4194b4") // TODO: only enable highlight for heart model. Need a better way to enable/disable this
                     groupParentNode.AddComponent<Interactible>();
                 AddMeshProperties(pmp.name, new Color(pmp.colour[0] / 255.0f, pmp.colour[1] / 255.0f, pmp.colour[2] / 255.0f), Vector3.zero, pmp.name);
 
@@ -396,10 +402,10 @@ public class PrevisModelLoader : MonoBehaviour
                 }
             }
 
-            if (prevTag.tag == "948a98") // baybridge
-                AllObjectsLoaded(prevTag, 1.0f);
-            else
+            if (prevTag.tag == "4194b4") // heart
                 AllObjectsLoaded(prevTag);
+            else
+                AllObjectsLoaded(prevTag, 1.0f);
 
         }
 
