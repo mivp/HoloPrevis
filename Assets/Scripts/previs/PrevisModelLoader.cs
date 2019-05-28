@@ -457,6 +457,9 @@ public class PrevisModelLoader : MonoBehaviour
         Debug.Log("Finished loading");
         if (previsGroup)
         {
+            //reset scale
+            GetComponent<UNetSharedHologram>().ResetScale();
+
             // enable renderer and collider
             new MyUnityHelpers().EnableGameObject(previsGroup, true);
 

@@ -209,6 +209,17 @@ namespace HoloToolkit.Unity.SharingWithUNET
             }
         }
 
+        public void ResetScale()
+        {
+            localPosition = transform.localPosition;
+            localRotation = transform.localRotation;
+            localScale = new Vector3(1.0f, 1.0f, 1.0f);
+            if (PlayerController.Instance != null)
+            {
+                PlayerController.Instance.SendSharedTransform(gameObject, localPosition, localRotation, localScale);
+            }
+        }
+
         public void OnInputClicked(InputClickedEventData eventData)
         {
             if (isOpaque == false && MyUIManager.Instance.CurrentModelEditMode == MyUIManager.ModelEditType.Move)
